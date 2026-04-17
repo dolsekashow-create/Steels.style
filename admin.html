@@ -333,6 +333,7 @@
   <nav class="tabs">
     <button class="tab active" onclick="switchTab('dashboard', this)">📊 لوحة التحكم</button>
     <button class="tab" onclick="switchTab('products', this)">🛍️ المنتجات</button>
+    <button class="tab" onclick="switchTab('categories', this)">🗂️ الأقسام</button>
     <button class="tab" onclick="switchTab('orders', this)">📦 الطلبات</button>
     <button class="tab" onclick="switchTab('settings', this)">⚙️ الإعدادات</button>
   </nav>
@@ -375,13 +376,23 @@
         <label>تصفية حسب الفئة</label>
         <select id="filterCat" onchange="renderProducts()">
           <option value="">الكل</option>
-          <option value="tshirts">التيشرتات</option>
-          <option value="frames">البراويز</option>
-          <option value="cases">كفرات الموبايل</option>
-          <option value="mugs">المجات</option>
         </select>
       </div>
       <div id="productList"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ─── Categories ─── -->
+  <div class="tab-content" id="tab-categories">
+    <div class="card">
+      <h3>
+        إدارة الأقسام
+        <button class="btn btn-primary btn-small" onclick="openCategoryForm()">+ إضافة قسم</button>
+      </h3>
+      <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:14px">
+        الأقسام دي اللي بتظهر في قائمة "الأقسام" فوق في الموقع، وبتستخدمها لما تضيف منتج جديد.
+      </p>
+      <div id="categoriesList"><div class="spinner"></div></div>
     </div>
   </div>
 
@@ -485,12 +496,7 @@
         </div>
         <div class="form-group">
           <label>الفئة *</label>
-          <select id="pmCategory" onchange="toggleVariantType()">
-            <option value="tshirts">التيشرتات</option>
-            <option value="frames">البراويز</option>
-            <option value="cases">كفرات الموبايل</option>
-            <option value="mugs">المجات</option>
-          </select>
+          <select id="pmCategory" onchange="toggleVariantType()"></select>
         </div>
       </div>
       <div class="form-group">
@@ -543,6 +549,46 @@
   </div>
 </div>
 
+<!-- ═════════ CATEGORY MODAL ═════════ -->
+<div class="modal-overlay" id="categoryModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <h3 id="cmTitle">إضافة قسم</h3>
+      <button class="btn btn-ghost btn-small" onclick="closeCategoryForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cmId">
+      <div class="form-group">
+        <label>اسم القسم (بالعربي) *</label>
+        <input type="text" id="cmName" placeholder="مثال: الشنط">
+      </div>
+      <div class="form-group">
+        <label>المعرّف (Slug) * — بالإنجليزي بدون مسافات</label>
+        <input type="text" id="cmSlug" placeholder="مثال: bags" style="direction:ltr;text-align:left">
+        <small style="color:var(--text-dim);font-size:.75rem">يستخدم في رابط القسم. ممنوع تغييره لو في منتجات داخله.</small>
+      </div>
+      <div class="form-group">
+        <label>العنوان الفرعي (اختياري)</label>
+        <input type="text" id="cmSubtitle" placeholder="مثال: شنط أنيقة بتصاميم مميزة">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ترتيب العرض</label>
+          <input type="number" id="cmOrder" value="0">
+        </div>
+        <div class="form-group">
+          <label>مفعل</label>
+          <select id="cmActive"><option value="true">نعم</option><option value="false">لا</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="saveCategory()">💾 حفظ القسم</button>
+      <button class="btn btn-ghost" onclick="closeCategoryForm()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -553,7 +599,7 @@ const SUPABASE_KEY = 'sb_publishable_lPa98YbCXdXpGJxitr7nNQ_EC0q_71g';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_PW = 'nimda321';
-let products = [], orders = [], settings = {};
+let products = [], orders = [], settings = {}, categories = [];
 
 // ─── Toast ───
 function toast(msg, type=''){
@@ -596,8 +642,32 @@ function switchTab(name, btn){
 
 // ─── Load data ───
 async function loadAll(){
-  await Promise.all([loadProducts(), loadOrders(), loadSettings()]);
+  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadSettings()]);
   updateDashboard();
+}
+
+async function loadCategories(){
+  const { data, error } = await sb.from('categories').select('*').order('display_order').order('created_at');
+  if (error){ toast('فشل تحميل الأقسام', 'error'); return; }
+  categories = data || [];
+  renderCategories();
+  populateCategoryDropdowns();
+}
+
+function populateCategoryDropdowns(){
+  // Filter dropdown on products tab
+  const filter = document.getElementById('filterCat');
+  const currentFilter = filter.value;
+  filter.innerHTML = '<option value="">الكل</option>' +
+    categories.map(c => `<option value="${c.slug}">${c.name}</option>`).join('');
+  filter.value = currentFilter;
+
+  // Product form category dropdown
+  const pmCat = document.getElementById('pmCategory');
+  const currentCat = pmCat.value;
+  pmCat.innerHTML = categories.filter(c=>c.active).map(c => 
+    `<option value="${c.slug}">${c.name}</option>`).join('');
+  if (currentCat) pmCat.value = currentCat;
 }
 
 async function loadProducts(){
@@ -668,7 +738,10 @@ function renderProducts(){
   const list = products.filter(p => !filter || p.category === filter);
   const box = document.getElementById('productList');
   if (!list.length){ box.innerHTML = '<div class="empty-state">لا توجد منتجات</div>'; return; }
-  const catNames = {tshirts:'تيشرتات', frames:'براويز', cases:'كفرات', mugs:'مجات'};
+  const catName = slug => {
+    const c = categories.find(x => x.slug === slug);
+    return c ? c.name : slug;
+  };
   const placeholderImg = 'data:image/svg+xml;utf8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="#555"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2z"/></svg>'
   );
@@ -679,7 +752,7 @@ function renderProducts(){
         <div class="product-list-item">
           <img src="${img}" onerror="this.src='${placeholderImg}'">
           <div>
-            <div class="name">${p.name} <span class="cat-badge">${catNames[p.category]||p.category}</span></div>
+            <div class="name">${p.name} <span class="cat-badge">${catName(p.category)}</span></div>
             <div class="meta">
               ${p.variants.length} نوع — 
               ابتداءً من ${Math.min(...p.variants.map(v=>v.price||0))} ₪ — 
@@ -723,7 +796,16 @@ function editProduct(id){
   document.getElementById('pmTitle').textContent = 'تعديل منتج';
   document.getElementById('pmId').value = p.id;
   document.getElementById('pmName').value = p.name;
-  document.getElementById('pmCategory').value = p.category;
+  // Ensure the product's category exists in the dropdown (even if inactive)
+  const pmCat = document.getElementById('pmCategory');
+  if (!Array.from(pmCat.options).find(o => o.value === p.category)){
+    const c = categories.find(x => x.slug === p.category);
+    const opt = document.createElement('option');
+    opt.value = p.category;
+    opt.textContent = (c ? c.name : p.category) + ' (غير مفعل)';
+    pmCat.appendChild(opt);
+  }
+  pmCat.value = p.category;
   document.getElementById('pmDesc').value = p.description || '';
   document.getElementById('pmOrder').value = p.display_order || 0;
   document.getElementById('pmActive').value = String(p.active);
@@ -1053,6 +1135,121 @@ document.getElementById('productModal').addEventListener('click', (e)=>{
 });
 document.getElementById('orderModal').addEventListener('click', (e)=>{
   if (e.target.id === 'orderModal') closeOrderModal();
+});
+
+// ─── Categories CRUD ───
+function renderCategories(){
+  const box = document.getElementById('categoriesList');
+  if (!categories.length){ box.innerHTML = '<div class="empty-state">لا توجد أقسام</div>'; return; }
+  box.innerHTML = `
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>#</th><th>الاسم</th><th>Slug</th><th>عدد المنتجات</th>
+        <th>الحالة</th><th>إجراءات</th>
+      </tr></thead>
+      <tbody>
+        ${categories.map(c => {
+          const count = products.filter(p => p.category === c.slug).length;
+          return `
+            <tr>
+              <td>${c.display_order}</td>
+              <td><strong style="color:var(--gold-1)">${c.name}</strong>${c.subtitle?`<div style="font-size:.75rem;color:var(--text-dim)">${c.subtitle}</div>`:''}</td>
+              <td style="direction:ltr;font-family:monospace;font-size:.8rem">${c.slug}</td>
+              <td>${count}</td>
+              <td>${c.active ? '<span class="badge badge-delivered">مفعل</span>' : '<span class="badge badge-cancelled">غير مفعل</span>'}</td>
+              <td>
+                <button class="btn btn-ghost btn-small" onclick="editCategory('${c.id}')">✎</button>
+                <button class="btn btn-danger btn-small" onclick="deleteCategory('${c.id}')" ${count>0?'title="احذف المنتجات أولاً"':''}>🗑️</button>
+              </td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+function openCategoryForm(){
+  document.getElementById('cmTitle').textContent = 'إضافة قسم';
+  document.getElementById('cmId').value = '';
+  document.getElementById('cmName').value = '';
+  document.getElementById('cmSlug').value = '';
+  document.getElementById('cmSlug').disabled = false;
+  document.getElementById('cmSubtitle').value = '';
+  document.getElementById('cmOrder').value = (categories.length + 1);
+  document.getElementById('cmActive').value = 'true';
+  document.getElementById('categoryModal').classList.add('open');
+}
+
+function editCategory(id){
+  const c = categories.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('cmTitle').textContent = 'تعديل قسم';
+  document.getElementById('cmId').value = c.id;
+  document.getElementById('cmName').value = c.name;
+  document.getElementById('cmSlug').value = c.slug;
+  // Disable slug editing if products exist under this category (to avoid orphans)
+  const hasProducts = products.some(p => p.category === c.slug);
+  document.getElementById('cmSlug').disabled = hasProducts;
+  document.getElementById('cmSubtitle').value = c.subtitle || '';
+  document.getElementById('cmOrder').value = c.display_order || 0;
+  document.getElementById('cmActive').value = String(c.active);
+  document.getElementById('categoryModal').classList.add('open');
+}
+
+function closeCategoryForm(){
+  document.getElementById('categoryModal').classList.remove('open');
+}
+
+async function saveCategory(){
+  const name = document.getElementById('cmName').value.trim();
+  const slug = document.getElementById('cmSlug').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  if (!name || !slug){ toast('املأ الاسم والـ slug', 'error'); return; }
+
+  const payload = {
+    name,
+    slug,
+    subtitle: document.getElementById('cmSubtitle').value.trim(),
+    display_order: Number(document.getElementById('cmOrder').value) || 0,
+    active: document.getElementById('cmActive').value === 'true'
+  };
+
+  const id = document.getElementById('cmId').value;
+  let result;
+  if (id){
+    // For edit, only include slug if it wasn't disabled
+    if (document.getElementById('cmSlug').disabled) delete payload.slug;
+    result = await sb.from('categories').update(payload).eq('id', id);
+  } else {
+    // Check slug uniqueness
+    if (categories.some(c => c.slug === slug)){
+      toast('الـ slug ده مستخدم قبل كده', 'error');
+      return;
+    }
+    result = await sb.from('categories').insert([payload]);
+  }
+  if (result.error){ console.error(result.error); toast('فشل الحفظ: ' + result.error.message, 'error'); return; }
+  toast('✓ تم الحفظ', 'success');
+  closeCategoryForm();
+  await loadCategories();
+}
+
+async function deleteCategory(id){
+  const c = categories.find(x => x.id === id);
+  if (!c) return;
+  const count = products.filter(p => p.category === c.slug).length;
+  if (count > 0){
+    toast(`لا يمكن الحذف — يوجد ${count} منتج في هذا القسم`, 'error');
+    return;
+  }
+  if (!confirm(`هل أنت متأكد من حذف قسم "${c.name}"؟`)) return;
+  const { error } = await sb.from('categories').delete().eq('id', id);
+  if (error){ toast('فشل الحذف', 'error'); return; }
+  toast('✓ تم الحذف', 'success');
+  await loadCategories();
+}
+
+// ─── Close category modal on backdrop click ───
+document.getElementById('categoryModal').addEventListener('click', (e)=>{
+  if (e.target.id === 'categoryModal') closeCategoryForm();
 });
 
 // ─── Auto-login if session exists ───
