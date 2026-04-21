@@ -1225,7 +1225,11 @@ const COLOR_MAP = {
   'بني':'#8b5a2b', 'برتقالي':'#ed8936', 'أصفر':'#ecc94b',
   'بنفسجي':'#805ad5', 'شفاف':'transparent'
 };
-const colorHex = c => COLOR_MAP[c] || '#888';
+const colorHex = c => {
+  if (!c) return '#888';
+  if (typeof c === 'object') return c.hex || COLOR_MAP[c.name] || '#888';
+  return COLOR_MAP[c] || c.startsWith('#') ? c : '#888';
+};
 
 // ─── Utility: toast ───
 function toast(msg, type=''){
