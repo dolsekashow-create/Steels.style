@@ -214,6 +214,113 @@
     outline:none;padding:4px;font-family:'Cairo';
   }
 
+  /* ─── Color Picker (Photoshop-style) ─── */
+  .color-picker-wrap{position:relative}
+
+  /* الألوان المضافة */
+  .color-tags{
+    display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:10px;
+  }
+  .color-tag{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--bg-2);border:1px solid var(--line);
+    border-radius:20px;padding:3px 10px 3px 6px;font-size:.8rem;color:var(--text);
+    cursor:default;
+  }
+  .color-tag-dot{
+    width:14px;height:14px;border-radius:50%;flex-shrink:0;
+    border:1px solid rgba(255,255,255,.2);
+  }
+  .color-tag-remove{
+    background:transparent;border:none;color:var(--danger);
+    cursor:pointer;font-size:.9rem;font-weight:900;padding:0;line-height:1;
+  }
+
+  /* زر فتح الـ picker */
+  .btn-open-picker{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 14px;
+    background:var(--bg-2);border:1px dashed var(--gold-3);
+    border-radius:var(--radius-sm);color:var(--gold-2);
+    font-family:'Cairo';font-size:.85rem;font-weight:700;cursor:pointer;
+    transition:all .2s;width:100%;justify-content:center;
+  }
+  .btn-open-picker:hover{background:rgba(212,175,55,.08);border-color:var(--gold-1)}
+  .btn-open-picker .preview-dot{
+    width:18px;height:18px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.3);flex-shrink:0;
+    background:#f00;
+  }
+
+  /* popup الـ picker */
+  .picker-popup{
+    position:absolute;top:calc(100% + 8px);right:0;z-index:500;
+    background:var(--bg-1);border:1px solid var(--gold-3);
+    border-radius:var(--radius);padding:16px;
+    width:280px;
+    box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(212,175,55,.1);
+    display:none;
+  }
+  .picker-popup.open{display:block}
+
+  /* Spectrum (saturation/brightness) */
+  .picker-spectrum{
+    width:100%;height:160px;border-radius:6px;
+    position:relative;cursor:crosshair;overflow:hidden;
+    flex-shrink:0;margin-bottom:12px;
+    user-select:none;
+  }
+  .picker-spectrum canvas{
+    position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:6px;
+  }
+  .picker-spectrum .spectrum-cursor{
+    position:absolute;width:14px;height:14px;border-radius:50%;
+    border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.5);
+    transform:translate(-50%,-50%);pointer-events:none;
+    transition:none;
+  }
+
+  /* Hue bar */
+  .picker-hue{
+    width:100%;height:14px;border-radius:7px;
+    background:linear-gradient(to right,
+      #f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%);
+    position:relative;cursor:pointer;margin-bottom:12px;
+    user-select:none;
+  }
+  .picker-hue .hue-cursor{
+    position:absolute;top:50%;transform:translate(-50%,-50%);
+    width:18px;height:18px;border-radius:50%;
+    border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.4);
+    pointer-events:none;background:transparent;
+  }
+
+  /* اسم اللون + hex */
+  .picker-inputs{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;
+  }
+  .picker-inputs input{
+    width:100%;padding:7px 10px;
+    background:var(--bg-3);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius-sm);
+    font-family:'Cairo';font-size:.82rem;outline:none;
+  }
+  .picker-inputs input:focus{border-color:var(--gold-3)}
+
+  /* preview + زر إضافة */
+  .picker-bottom{display:flex;gap:8px;align-items:center}
+  .picker-preview{
+    width:40px;height:36px;border-radius:6px;flex-shrink:0;
+    border:1px solid rgba(255,255,255,.15);
+  }
+  .btn-add-color{
+    flex:1;padding:8px;border:none;border-radius:var(--radius-sm);
+    background:linear-gradient(135deg,var(--gold-1),var(--gold-2),var(--gold-3));
+    color:#000;font-weight:800;font-family:'Cairo';font-size:.85rem;cursor:pointer;
+    transition:all .2s;
+  }
+  .btn-add-color:hover{box-shadow:0 4px 12px -2px var(--gold-glow)}
+
   /* Image upload */
   .img-upload-wrap{
     border:2px dashed var(--line);border-radius:var(--radius-sm);padding:16px;
@@ -475,22 +582,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <h3>✦ الشخصيات (chips البحث)</h3>
-      <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:14px">
-        الشخصيات دي بتظهر كـ chips في صفحة البحث عشان العميل يفلتر بيها. اكتب الشخصية واضغط Enter أو فاصلة.
-      </p>
-      <div class="form-group">
-        <label>الشخصيات الحالية</label>
-        <div class="tag-input" id="charsTagInput" onclick="document.getElementById('charsInput').focus()">
-          <input type="text" id="charsInput" placeholder="اكتب شخصية واضغط Enter…" onkeydown="handleCharTag(event)">
-        </div>
-        <small style="color:var(--text-dim);font-size:.75rem;margin-top:5px;display:block">
-          اضغط <strong style="color:var(--gold-2)">Enter</strong> أو <strong style="color:var(--gold-2)">فاصلة</strong> لإضافة شخصية — اضغط ✕ لحذفها
-        </small>
-      </div>
-    </div>
-
     <button class="btn btn-primary" onclick="saveSettings()" style="padding:12px 28px;font-size:1rem">💾 حفظ كل الإعدادات</button>
   </div>
 
@@ -622,8 +713,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ─── Supabase ───
-const SUPABASE_URL = 'https://jitmkznqjcooznhttvat.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_-QsEFXUROKnimHHecEzymQ_EKaReHeU';
+const SUPABASE_URL = 'https://mffpfxglevnwzyanbexr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_lPa98YbCXdXpGJxitr7nNQ_EC0q_71g';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_PW = 'nimda321';
@@ -869,12 +960,28 @@ function addVariant(data = {}){
   const row = document.createElement('div');
   row.className = 'variant-row';
   row.dataset.idx = idx;
+
+  // بناء الألوان الموجودة — كل لون ممكن يكون string أو {name,hex}
+  const existingColors = (data.colors||[]).map(c => {
+    if (typeof c === 'object' && c.name) return c;
+    // لو string — دور على الـ hex من الـ COLOR_MAP أو اعمله hex
+    return { name: c, hex: ADMIN_COLOR_MAP[c] || '#888888' };
+  });
+
+  const colorTagsHtml = existingColors.map((c,i) =>
+    `<span class="color-tag" data-name="${c.name}" data-hex="${c.hex}">
+      <span class="color-tag-dot" style="background:${c.hex}"></span>
+      ${c.name}
+      <button type="button" class="color-tag-remove" onclick="removeColorTag(this)">×</button>
+    </span>`
+  ).join('');
+
   row.innerHTML = `
     <button class="remove-variant" type="button" onclick="this.parentElement.remove()" title="حذف">✕</button>
     <h4>النوع / الخامة #${idx+1}</h4>
     <div class="form-grid">
       <div class="form-group">
-        <label>اسم النوع (اختياري — للتيشرتات: عادية/أوفر سايز/لايكرا)</label>
+        <label>اسم النوع (اختياري)</label>
         <input type="text" data-f="type" value="${data.type||''}" placeholder="مثال: عادية">
       </div>
       <div class="form-group">
@@ -883,10 +990,28 @@ function addVariant(data = {}){
       </div>
     </div>
     <div class="form-group">
-      <label>الألوان (اكتب ثم Enter)</label>
-      <div class="tag-input" data-f="colors">
-        ${(data.colors||[]).map(c=>`<span class="tag">${c}<button type="button" onclick="this.parentElement.remove()">×</button></span>`).join('')}
-        <input type="text" placeholder="اضغط Enter لإضافة لون" onkeydown="addTag(event)">
+      <label>الألوان</label>
+      <div class="color-picker-wrap" data-f="colors">
+        <div class="color-tags">${colorTagsHtml}</div>
+        <button type="button" class="btn-open-picker" onclick="openColorPicker(this)">
+          <span class="preview-dot" style="background:#e63946"></span>
+          + إضافة لون
+        </button>
+        <div class="picker-popup">
+          <canvas class="picker-spectrum" width="248" height="160"></canvas>
+          <div class="picker-spectrum-overlay" style="position:relative;margin-bottom:12px">
+            <!-- spectrum rendered in JS -->
+          </div>
+          <div class="picker-hue"><div class="hue-cursor" style="left:0%"></div></div>
+          <div class="picker-inputs">
+            <input type="text" class="picker-name" placeholder="اسم اللون (عربي)" value="">
+            <input type="text" class="picker-hex" placeholder="#HEX" value="#e63946" maxlength="7">
+          </div>
+          <div class="picker-bottom">
+            <div class="picker-preview" style="background:#e63946"></div>
+            <button type="button" class="btn-add-color" onclick="addColorFromPicker(this)">✔ إضافة اللون</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="form-group">
@@ -898,9 +1023,221 @@ function addVariant(data = {}){
     </div>
   `;
   list.appendChild(row);
+
+  // تهيئة الـ picker في الـ row الجديد
+  initPickerInRow(row);
 }
 
-function addTag(e){
+// ─── Admin color map (للـ backward compat مع ألوان قديمة) ───
+const ADMIN_COLOR_MAP = {
+  'أبيض':'#f5f5f5','أسود':'#0a0a0a','كحلي':'#1a2c5a','رمادي':'#808080',
+  'بيج':'#d4c5a0','بيج غامق':'#a88862','ذهبي':'#d4af37','فضي':'#c0c0c0',
+  'أحمر':'#c43b3b','أزرق':'#2968c8','أخضر':'#3c9049',
+  'وردي':'#eeb2c4','زهري':'#eaa5b8','خمري':'#5c1e28',
+  'زيتي':'#6b6a2c','سكني':'#c4a882','بني':'#8b5a2b',
+  'برتقالي':'#ed8936','أصفر':'#ecc94b','بنفسجي':'#805ad5'
+};
+
+// ─── Color Picker Logic ───
+let _activePicker = null; // الـ picker المفتوح حالياً
+
+function initPickerInRow(row){
+  const wrap      = row.querySelector('.color-picker-wrap');
+  const popup     = wrap.querySelector('.picker-popup');
+  const canvas    = popup.querySelector('canvas');
+  const huebar    = popup.querySelector('.picker-hue');
+  const hueCursor = huebar.querySelector('.hue-cursor');
+  const hexInput  = popup.querySelector('.picker-hex');
+  const nameInput = popup.querySelector('.picker-name');
+  const preview   = popup.querySelector('.picker-preview');
+  const previewDot= wrap.querySelector('.preview-dot');
+
+  let hue = 0, sat = 1, bri = 0.5;
+  let specW = 248, specH = 160;
+  let specDragging = false, hueDragging = false;
+
+  // ── رسم الـ spectrum ──
+  function drawSpectrum(){
+    const ctx = canvas.getContext('2d');
+    canvas.width  = canvas.offsetWidth  || specW;
+    canvas.height = canvas.offsetHeight || specH;
+    specW = canvas.width; specH = canvas.height;
+
+    // gradient أبيض → اللون الأساسي (أفقي)
+    const base = `hsl(${hue},100%,50%)`;
+    const gH = ctx.createLinearGradient(0,0,specW,0);
+    gH.addColorStop(0,'#fff');
+    gH.addColorStop(1, base);
+    ctx.fillStyle = gH;
+    ctx.fillRect(0,0,specW,specH);
+
+    // gradient شفاف → أسود (عمودي)
+    const gV = ctx.createLinearGradient(0,0,0,specH);
+    gV.addColorStop(0,'rgba(0,0,0,0)');
+    gV.addColorStop(1,'#000');
+    ctx.fillStyle = gV;
+    ctx.fillRect(0,0,specW,specH);
+  }
+
+  // ── cursor الـ spectrum ──
+  let specCursor = document.createElement('div');
+  specCursor.className = 'spectrum-cursor';
+  canvas.parentElement.appendChild(specCursor);
+
+  function positionSpecCursor(){
+    const x = sat  * specW;
+    const y = (1 - bri) * specH;
+    specCursor.style.left = x + 'px';
+    specCursor.style.top  = y + 'px';
+  }
+
+  // ── HSV → HEX ──
+  function hsvToHex(h, s, v){
+    let r,g,b;
+    const i = Math.floor(h/60)%6;
+    const f = h/60 - Math.floor(h/60);
+    const p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
+    [r,g,b] = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i];
+    const toH = n => Math.round(n*255).toString(16).padStart(2,'0');
+    return '#' + toH(r) + toH(g) + toH(b);
+  }
+
+  // ── HEX → HSV ──
+  function hexToHsv(hex){
+    const r = parseInt(hex.slice(1,3),16)/255;
+    const g = parseInt(hex.slice(3,5),16)/255;
+    const b = parseInt(hex.slice(5,7),16)/255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+    let h=0,s=max===0?0:d/max,v=max;
+    if(d){
+      if(max===r) h=((g-b)/d+6)%6;
+      else if(max===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h*=60;
+    }
+    return [h,s,v];
+  }
+
+  function syncFromHsv(){
+    const hex = hsvToHex(hue, sat, bri);
+    hexInput.value = hex;
+    preview.style.background = hex;
+    previewDot.style.background = hex;
+    specCursor.style.background = hex;
+  }
+
+  // ── Spectrum mouse/touch ──
+  function spectrumPick(e){
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    sat = Math.min(1, Math.max(0, (cx - rect.left) / rect.width));
+    bri = Math.min(1, Math.max(0, 1 - (cy - rect.top)  / rect.height));
+    positionSpecCursor();
+    syncFromHsv();
+  }
+  canvas.addEventListener('mousedown',  e=>{ specDragging=true; spectrumPick(e); e.preventDefault(); });
+  canvas.addEventListener('touchstart', e=>{ specDragging=true; spectrumPick(e); e.preventDefault(); },{passive:false});
+  document.addEventListener('mousemove', e=>{ if(specDragging){ spectrumPick(e); }});
+  document.addEventListener('touchmove', e=>{ if(specDragging){ spectrumPick(e); e.preventDefault(); }},{passive:false});
+  document.addEventListener('mouseup',  ()=>{ specDragging=false; });
+  document.addEventListener('touchend', ()=>{ specDragging=false; });
+
+  // ── Hue bar ──
+  function huePick(e){
+    const rect = huebar.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const ratio = Math.min(1, Math.max(0, (cx - rect.left) / rect.width));
+    hue = ratio * 360;
+    hueCursor.style.left = (ratio * 100) + '%';
+    drawSpectrum();
+    syncFromHsv();
+  }
+  huebar.addEventListener('mousedown',  e=>{ hueDragging=true; huePick(e); e.preventDefault(); });
+  huebar.addEventListener('touchstart', e=>{ hueDragging=true; huePick(e); e.preventDefault(); },{passive:false});
+  document.addEventListener('mousemove', e=>{ if(hueDragging){ huePick(e); }});
+  document.addEventListener('touchmove', e=>{ if(hueDragging){ huePick(e); e.preventDefault(); }},{passive:false});
+  document.addEventListener('mouseup',  ()=>{ hueDragging=false; });
+  document.addEventListener('touchend', ()=>{ hueDragging=false; });
+
+  // ── Hex input تغيير يدوي ──
+  hexInput.addEventListener('input', ()=>{
+    let v = hexInput.value.trim();
+    if (!v.startsWith('#')) v = '#' + v;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)){
+      [hue, sat, bri] = hexToHsv(v);
+      hueCursor.style.left = (hue/360*100) + '%';
+      drawSpectrum();
+      positionSpecCursor();
+      preview.style.background = v;
+      previewDot.style.background = v;
+      specCursor.style.background = v;
+    }
+  });
+
+  // حفظ refs على الـ wrap عشان نوصلها من زر الإضافة
+  wrap._picker = { hue:()=>hue, sat:()=>sat, bri:()=>bri, hexInput, nameInput, syncFromHsv, drawSpectrum, positionSpecCursor };
+}
+
+function openColorPicker(btn){
+  const wrap  = btn.closest('.color-picker-wrap');
+  const popup = wrap.querySelector('.picker-popup');
+
+  // إغلاق أي picker تاني
+  if (_activePicker && _activePicker !== popup){
+    _activePicker.classList.remove('open');
+  }
+  popup.classList.toggle('open');
+  _activePicker = popup.classList.contains('open') ? popup : null;
+
+  if (popup.classList.contains('open')){
+    const p = wrap._picker;
+    // أول مرة يفتح: ارسم الـ spectrum
+    setTimeout(()=>{ p.drawSpectrum(); p.positionSpecCursor(); p.syncFromHsv(); }, 10);
+  }
+}
+
+// إغلاق الـ picker لما تضغط برا
+document.addEventListener('click', e=>{
+  if (!e.target.closest('.color-picker-wrap')){
+    document.querySelectorAll('.picker-popup.open').forEach(p=>p.classList.remove('open'));
+    _activePicker = null;
+  }
+});
+
+function addColorFromPicker(btn){
+  const popup = btn.closest('.picker-popup');
+  const wrap  = btn.closest('.color-picker-wrap');
+  const p     = wrap._picker;
+  const hex   = p.hexInput.value.trim() || '#888888';
+  const name  = p.nameInput.value.trim();
+
+  if (!name){ p.nameInput.focus(); p.nameInput.style.borderColor='var(--danger)'; return; }
+  p.nameInput.style.borderColor = '';
+
+  // إضافة الـ tag
+  const tagsWrap = wrap.querySelector('.color-tags');
+  const tag = document.createElement('span');
+  tag.className = 'color-tag';
+  tag.dataset.name = name;
+  tag.dataset.hex  = hex;
+  tag.innerHTML = `
+    <span class="color-tag-dot" style="background:${hex}"></span>
+    ${name}
+    <button type="button" class="color-tag-remove" onclick="removeColorTag(this)">×</button>`;
+  tagsWrap.appendChild(tag);
+
+  // reset الـ inputs
+  p.nameInput.value = '';
+  popup.classList.remove('open');
+  _activePicker = null;
+}
+
+function removeColorTag(btn){
+  btn.closest('.color-tag').remove();
+}
+
+
   if (e.key !== 'Enter') return;
   e.preventDefault();
   const val = e.target.value.trim();
@@ -918,7 +1255,11 @@ function collectVariants(){
   rows.forEach(row => {
     const type = row.querySelector('[data-f="type"]').value.trim();
     const price = Number(row.querySelector('[data-f="price"]').value) || 0;
-    const colors = [...row.querySelectorAll('[data-f="colors"] .tag')].map(t => t.childNodes[0].textContent.trim());
+    // جمع الألوان كـ {name, hex}
+    const colors = [...row.querySelectorAll('[data-f="colors"] .color-tag')].map(tag => ({
+      name: tag.dataset.name || '',
+      hex:  tag.dataset.hex  || '#888888'
+    }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
     const v = { price, colors, sizes };
     if (type) v.type = type;
@@ -1141,43 +1482,6 @@ function fillSettingsForm(){
   document.getElementById('setEmail').value = contact.email || '';
   document.getElementById('setAddress').value = contact.address || '';
   document.getElementById('setAboutText').value = about.text || '';
-  // Render characters tags
-  const chars = Array.isArray(settings.characters) ? settings.characters : [];
-  renderCharTags(chars);
-}
-
-// ─── Characters tag helpers ───
-let charsList = [];
-
-function renderCharTags(list){
-  charsList = [...list];
-  const wrap = document.getElementById('charsTagInput');
-  const input = document.getElementById('charsInput');
-  // Remove old tags (keep input)
-  wrap.querySelectorAll('.tag').forEach(t => t.remove());
-  charsList.forEach((ch, i) => {
-    const tag = document.createElement('span');
-    tag.className = 'tag';
-    tag.innerHTML = `${ch}<button type="button" onclick="removeCharTag(${i})" title="حذف">✕</button>`;
-    wrap.insertBefore(tag, input);
-  });
-}
-
-function removeCharTag(i){
-  charsList.splice(i, 1);
-  renderCharTags(charsList);
-}
-
-function handleCharTag(e){
-  if (e.key === 'Enter' || e.key === ',' || e.key === '،'){
-    e.preventDefault();
-    const val = e.target.value.trim().replace(/,$|،$/, '');
-    if (val && !charsList.includes(val)){
-      charsList.push(val);
-      renderCharTags(charsList);
-    }
-    e.target.value = '';
-  }
 }
 
 async function saveSettings(){
@@ -1202,8 +1506,7 @@ async function saveSettings(){
   const updates = [
     {key:'hero', value:hero},
     {key:'contact', value:contact},
-    {key:'about', value:about},
-    {key:'characters', value:charsList}
+    {key:'about', value:about}
   ];
 
   for (const u of updates){
