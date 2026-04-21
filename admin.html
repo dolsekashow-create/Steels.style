@@ -475,6 +475,22 @@
       </div>
     </div>
 
+    <div class="card">
+      <h3>✦ الشخصيات (chips البحث)</h3>
+      <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:14px">
+        الشخصيات دي بتظهر كـ chips في صفحة البحث عشان العميل يفلتر بيها. اكتب الشخصية واضغط Enter أو فاصلة.
+      </p>
+      <div class="form-group">
+        <label>الشخصيات الحالية</label>
+        <div class="tag-input" id="charsTagInput" onclick="document.getElementById('charsInput').focus()">
+          <input type="text" id="charsInput" placeholder="اكتب شخصية واضغط Enter…" onkeydown="handleCharTag(event)">
+        </div>
+        <small style="color:var(--text-dim);font-size:.75rem;margin-top:5px;display:block">
+          اضغط <strong style="color:var(--gold-2)">Enter</strong> أو <strong style="color:var(--gold-2)">فاصلة</strong> لإضافة شخصية — اضغط ✕ لحذفها
+        </small>
+      </div>
+    </div>
+
     <button class="btn btn-primary" onclick="saveSettings()" style="padding:12px 28px;font-size:1rem">💾 حفظ كل الإعدادات</button>
   </div>
 
@@ -606,8 +622,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ─── Supabase ───
-const SUPABASE_URL = 'https://mffpfxglevnwzyanbexr.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_lPa98YbCXdXpGJxitr7nNQ_EC0q_71g';
+const SUPABASE_URL = 'https://jitmkznqjcooznhttvat.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-QsEFXUROKnimHHecEzymQ_EKaReHeU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_PW = 'nimda321';
@@ -1125,6 +1141,43 @@ function fillSettingsForm(){
   document.getElementById('setEmail').value = contact.email || '';
   document.getElementById('setAddress').value = contact.address || '';
   document.getElementById('setAboutText').value = about.text || '';
+  // Render characters tags
+  const chars = Array.isArray(settings.characters) ? settings.characters : [];
+  renderCharTags(chars);
+}
+
+// ─── Characters tag helpers ───
+let charsList = [];
+
+function renderCharTags(list){
+  charsList = [...list];
+  const wrap = document.getElementById('charsTagInput');
+  const input = document.getElementById('charsInput');
+  // Remove old tags (keep input)
+  wrap.querySelectorAll('.tag').forEach(t => t.remove());
+  charsList.forEach((ch, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = `${ch}<button type="button" onclick="removeCharTag(${i})" title="حذف">✕</button>`;
+    wrap.insertBefore(tag, input);
+  });
+}
+
+function removeCharTag(i){
+  charsList.splice(i, 1);
+  renderCharTags(charsList);
+}
+
+function handleCharTag(e){
+  if (e.key === 'Enter' || e.key === ',' || e.key === '،'){
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/,$|،$/, '');
+    if (val && !charsList.includes(val)){
+      charsList.push(val);
+      renderCharTags(charsList);
+    }
+    e.target.value = '';
+  }
 }
 
 async function saveSettings(){
@@ -1149,7 +1202,8 @@ async function saveSettings(){
   const updates = [
     {key:'hero', value:hero},
     {key:'contact', value:contact},
-    {key:'about', value:about}
+    {key:'about', value:about},
+    {key:'characters', value:charsList}
   ];
 
   for (const u of updates){
