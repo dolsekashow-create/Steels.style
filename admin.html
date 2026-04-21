@@ -731,7 +731,7 @@ function toast(msg, type=''){
 
 // ─── Auth ───
 function doLogin(e){
-  e.preventDefault();
+  if (e) e.preventDefault();
   const pw = document.getElementById('pwInput').value;
   if (pw === ADMIN_PW){
     sessionStorage.setItem('steels_admin', '1');
@@ -739,6 +739,7 @@ function doLogin(e){
   } else {
     document.getElementById('loginErr').textContent = 'كلمة المرور خاطئة';
   }
+  return false;
 }
 
 function logout(){
@@ -1641,7 +1642,9 @@ document.getElementById('categoryModal').addEventListener('click', (e)=>{
 });
 
 // ─── Auto-login if session exists ───
-if (sessionStorage.getItem('steels_admin') === '1') showDash();
+document.addEventListener('DOMContentLoaded', function(){
+  if (sessionStorage.getItem('steels_admin') === '1') showDash();
+});
 </script>
 </body>
 </html>
