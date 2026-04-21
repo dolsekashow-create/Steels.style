@@ -1238,7 +1238,7 @@ function removeColorTag(btn){
   btn.closest('.color-tag').remove();
 }
 
-
+function handleTagInput(e){
   if (e.key !== 'Enter') return;
   e.preventDefault();
   const val = e.target.value.trim();
