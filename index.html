@@ -337,22 +337,32 @@
     cursor:pointer;outline:none;
   }
   .product-body select:focus{border-color:var(--gold-3)}
-  .color-swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .color-swatches{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .color-swatch{
     width:28px;height:28px;border-radius:50%;cursor:pointer;position:relative;
     border:2px solid transparent;transition:all .2s;
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);
+    flex-shrink:0;
   }
-  .color-swatch:hover{transform:scale(1.12)}
-  .color-swatch.active{border-color:var(--gold-2);box-shadow:0 0 12px var(--gold-glow)}
+  .color-swatch:hover{transform:scale(1.15)}
+  .color-swatch.active{
+    border-color:var(--gold-2);
+    box-shadow:0 0 0 3px rgba(212,175,55,.35), inset 0 0 0 1px rgba(255,255,255,.2);
+    transform:scale(1.12);
+  }
   .color-swatch::after{
     content:attr(data-label);position:absolute;bottom:calc(100% + 6px);left:50%;
     transform:translateX(-50%);white-space:nowrap;
     background:#000;color:var(--gold-1);padding:3px 8px;border-radius:4px;
     font-size:.7rem;opacity:0;pointer-events:none;transition:opacity .2s;
-    border:1px solid var(--line);
+    border:1px solid var(--line);z-index:10;
   }
   .color-swatch:hover::after{opacity:1}
+  .color-name-label{
+    font-size:.78rem;color:var(--gold-2);font-weight:700;
+    margin-top:4px;min-height:16px;text-align:right;
+    transition:opacity .2s;
+  }
   .price-tag{
     display:flex;align-items:baseline;justify-content:center;gap:6px;
     padding:10px;background:rgba(212,175,55,.06);border-radius:var(--radius-sm);
@@ -1403,6 +1413,7 @@ function performSearch(){
 
   label.innerHTML = `تم العثور على <strong>${results.length}</strong> منتج`;
   grid.innerHTML = results.map(p => renderCard(p)).join('');
+  grid.querySelectorAll('.product-card').forEach(attachCardHandlers);
 }
 
 // ─── Dropdown toggle ───
@@ -1569,6 +1580,7 @@ function renderCard(p){
                     style="background:${colorHex(name)}"></span>`;
             }).join('')}
           </div>
+          <div class="color-name-label" data-role="color-name">${(()=>{const c=firstVariant.colors&&firstVariant.colors[0];return c?(typeof c==='object'?c.name:c):''})()}</div>
         </div>
         <div class="price-tag">
           <span class="num" data-role="price">${firstVariant.price||0}</span>
@@ -1609,11 +1621,28 @@ function attachCardHandlers(card){
     // colors
     if (colorsBox) {
       const colors = v.colors || [];
-      colorsBox.innerHTML = colors.map((c,i)=>`
-        <span class="color-swatch ${i===0?'active':''}" 
-              data-color="${c}" data-label="${c}"
-              style="background:${colorHex(c)}"></span>`).join('');
+      colorsBox.innerHTML = colors.map((c,i)=>{
+        const name = typeof c === 'object' ? c.name : c;
+        return `<span class="color-swatch ${i===0?'active':''}"
+              data-color="${name}" data-label="${name}"
+              style="background:${colorHex(name)}"></span>`;
+      }).join('');
       colorsWrap.style.display = colors.length ? '' : 'none';
+      // تحديث label اللون الأول
+      const colorNameLabel = card.querySelector('[data-role="color-name"]');
+      if (colorNameLabel){
+        const firstColor = colors[0];
+        colorNameLabel.textContent = firstColor ? (typeof firstColor==='object' ? firstColor.name : firstColor) : '';
+      }
+      const colorImgMap = {};
+      (product.variants||[]).forEach(vv => {
+        (vv.colors||[]).forEach(c => {
+          const n = typeof c==='object' ? c.name : c;
+          const img = typeof c==='object' ? (c.image||product.image_url||'') : product.image_url||'';
+          if (n && !colorImgMap[n]) colorImgMap[n] = img;
+        });
+      });
+      card.dataset.colorImgs = encodeURIComponent(JSON.stringify(colorImgMap));
       attachColorSwatches(colorsBox, card);
     }
   };
@@ -1644,17 +1673,25 @@ function attachCardHandlers(card){
 
 function attachColorSwatches(box, card){
   if (!box) return;
+  // العثور على الـ label جنب الـ swatches
+  const colorNameLabel = card
+    ? card.querySelector('[data-role="color-name"]')
+    : box.closest('[id]')?.querySelector('[data-role="color-name"]') || null;
+
   box.querySelectorAll('.color-swatch').forEach(sw => {
-    sw.addEventListener('click', () => {
+    sw.addEventListener('click', (e) => {
+      e.stopPropagation(); // منع فتح الـ modal لما بيضغط على اللون
       box.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
       sw.classList.add('active');
 
-      // Change card image if color has its own image
+      // تحديث اسم اللون
+      if (colorNameLabel) colorNameLabel.textContent = sw.dataset.color || '';
+
+      // تغيير صورة الكارد لو اللون عنده صورة مخصصة
       if (card) {
         try {
           const colorImgs = JSON.parse(decodeURIComponent(card.dataset.colorImgs || '{}'));
-          const colorName = sw.dataset.color;
-          const newSrc = colorImgs[colorName];
+          const newSrc = colorImgs[sw.dataset.color];
           if (newSrc) {
             const imgEl = card.querySelector('.product-image img');
             if (imgEl && imgEl.src !== newSrc) {
@@ -1788,6 +1825,9 @@ function pmRenderVariantControls(v, p){
       sw.addEventListener('click', () => {
         colorsBox.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
         sw.classList.add('active');
+        // تحديث اسم اللون
+        const lbl = document.getElementById('pmColorName');
+        if (lbl) lbl.textContent = sw.dataset.color || '';
         const newSrc = colorImgMap[sw.dataset.color];
         if (newSrc){
           const imgEl = document.getElementById('pmImg');
@@ -1801,6 +1841,9 @@ function pmRenderVariantControls(v, p){
     const firstColorName = typeof colors[0]==='object' ? colors[0].name : colors[0];
     const firstImg = colorImgMap[firstColorName];
     if (firstImg){ document.getElementById('pmImg').src = firstImg; }
+    // تحديث اسم اللون الأول
+    const pmColorNameEl = document.getElementById('pmColorName');
+    if (pmColorNameEl) pmColorNameEl.textContent = firstColorName || '';
   } else { colorWrap.style.display = 'none'; }
 
   // Price
@@ -2151,6 +2194,7 @@ updateCartBadge();
       <div id="pmColorWrap" style="display:none">
         <label class="field-label">اللون:</label>
         <div class="color-swatches" id="pmColors"></div>
+        <div class="color-name-label" id="pmColorName"></div>
       </div>
 
       <!-- السعر -->
