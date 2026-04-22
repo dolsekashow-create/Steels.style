@@ -1469,6 +1469,33 @@ document.addEventListener('click', (e)=>{
 
 // ─── Render all categories ───
 const VISIBLE_PER_SECTION = 6;
+const COVER_BRANDS = ['iPhone','Samsung','Xiaomi','Oppo'];
+
+function buildSection(id, title, subtitle, items, brandFilter){
+  // لو brandFilter موجود، فلتر الـ dropdown بالـ brand ده
+  const hasMore = items.length > VISIBLE_PER_SECTION;
+  const visibleItems = hasMore ? items.slice(0, VISIBLE_PER_SECTION) : items;
+  const hiddenItems  = hasMore ? items.slice(VISIBLE_PER_SECTION)    : [];
+  const grid = !items.length
+    ? '<p style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:30px">لا توجد منتجات في هذا القسم حالياً</p>'
+    : visibleItems.map(p => renderCard(p, brandFilter)).join('') +
+      (hiddenItems.length ? `<div class="hidden-products" style="display:contents">${hiddenItems.map(p => renderCard(p, brandFilter)).join('')}</div>` : '');
+  const showMorePill = hasMore
+    ? `<button class="show-more-pill" onclick="toggleSection(this)" data-more="عرض المزيد ←" data-less="عرض أقل ←">عرض المزيد ←</button>`
+    : '';
+  return `
+    <section class="category" id="${id}" data-brand-filter="${brandFilter||''}">
+      ${showMorePill}
+      <div class="container">
+        <div class="section-head">
+          <h2 class="gold-text">${title}</h2>
+          <div class="divider"><span class="diamond"></span></div>
+          ${subtitle ? `<p>${subtitle}</p>` : ''}
+        </div>
+        <div class="product-grid">${grid}</div>
+      </div>
+    </section>`;
+}
 
 function renderAll(){
   productsMap.clear();
@@ -1480,44 +1507,43 @@ function renderAll(){
     return;
   }
 
-  container.innerHTML = categories.map(cat => {
-    const items = products.filter(p => p.category === cat.slug);
-    const hasMore = items.length > VISIBLE_PER_SECTION;
-    const visibleItems = hasMore ? items.slice(0, VISIBLE_PER_SECTION) : items;
-    const hiddenItems = hasMore ? items.slice(VISIBLE_PER_SECTION) : [];
-    
-    let grid;
-    if (!items.length){
-      grid = '<p style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:30px">لا توجد منتجات في هذا القسم حالياً</p>';
-    } else {
-      grid = visibleItems.map(p => renderCard(p)).join('') +
-        (hiddenItems.length ? `<div class="hidden-products" style="display:contents">${hiddenItems.map(p => renderCard(p)).join('')}</div>` : '');
-    }
+  let html = '';
+  categories.forEach(cat => {
+    const isCover = isPhoneCaseCategory(cat.slug);
+    const items   = products.filter(p => p.category === cat.slug);
 
-    const showMorePill = hasMore 
-      ? `<button class="show-more-pill" onclick="toggleSection(this)" data-more="عرض المزيد ←" data-less="عرض أقل ←">عرض المزيد ←</button>`
-      : '';
-
-    return `
-      <section class="category" id="${cat.slug}">
-        ${showMorePill}
-        <div class="container">
+    if (isCover){
+      // عنوان رئيسي للكفرات
+      html += `
+        <div class="container" style="padding-top:70px;padding-bottom:10px">
           <div class="section-head">
-            <h2 class="gold-text">${cat.name}</h2>
+            <h2 class="gold-text">كفرات موبايل</h2>
             <div class="divider"><span class="diamond"></span></div>
             ${cat.subtitle ? `<p>${cat.subtitle}</p>` : ''}
           </div>
-          <div class="product-grid">${grid}</div>
-        </div>
-      </section>`;
-  }).join('');
+        </div>`;
+      // sub-section لكل براند
+      COVER_BRANDS.forEach(brand => {
+        html += buildSection(
+          cat.slug + '-' + brand.toLowerCase(),
+          'كفرات ' + brand,
+          '',
+          items,
+          brand
+        );
+      });
+    } else {
+      html += buildSection(cat.slug, cat.name, cat.subtitle, items, '');
+    }
+  });
+
+  container.innerHTML = html;
 
   // Attach listeners
   document.querySelectorAll('.product-card').forEach(card => {
     attachCardHandlers(card);
     attachExtras(card);
   });
-  // Initially hide the extras
   document.querySelectorAll('.hidden-products').forEach(el => {
     el.style.display = 'none';
   });
@@ -2208,42 +2234,48 @@ function isPhoneCaseCategory(catSlug){
   return catSlug && (catSlug.includes('جراب') || catSlug.includes('case') || catSlug.includes('cover') || catSlug.includes('كفر'));
 }
 
-function buildPhoneModelSelector(cardEl){
+function buildPhoneModelSelector(cardEl, fixedBrand){
   // Don't double-inject
-  if (cardEl.querySelector('.phone-brand-tabs')) return;
+  if (cardEl.querySelector('.phone-model-select')) return;
   const body = cardEl.querySelector('.product-body');
   if (!body) return;
   const priceEl = cardEl.querySelector('[data-role="price"]');
-
-  // Force price to 40
   if (priceEl) priceEl.textContent = '40';
 
-  const brands = Object.keys(PHONE_MODELS);
+  // لو البراند محدد مسبقاً (من الـ section) → اعرض موديلاته مباشرة بدون tabs
   const wrap = document.createElement('div');
   wrap.className = 'phone-model-wrap';
-  wrap.innerHTML = `
-    <label class="field-label">الجهاز:</label>
-    <div class="phone-brand-tabs">
-      ${brands.map((b,i)=>`<button type="button" class="phone-brand-tab${i===0?' active':''}" data-brand="${b}">${b}</button>`).join('')}
-    </div>
-    <select class="phone-model-select" data-role="phone-model">
-      ${PHONE_MODELS[brands[0]].map(m=>`<option value="${m}">${m}</option>`).join('')}
-    </select>`;
 
-  // Insert before price tag
+  if (fixedBrand && PHONE_MODELS[fixedBrand]){
+    wrap.innerHTML = `
+      <label class="field-label">موديل ${fixedBrand}:</label>
+      <select class="phone-model-select" data-role="phone-model">
+        ${PHONE_MODELS[fixedBrand].map(m=>`<option value="${m}">${m}</option>`).join('')}
+      </select>`;
+  } else {
+    const brands = Object.keys(PHONE_MODELS);
+    wrap.innerHTML = `
+      <label class="field-label">الجهاز:</label>
+      <div class="phone-brand-tabs">
+        ${brands.map((b,i)=>`<button type="button" class="phone-brand-tab${i===0?' active':''}" data-brand="${b}">${b}</button>`).join('')}
+      </div>
+      <select class="phone-model-select" data-role="phone-model">
+        ${PHONE_MODELS[brands[0]].map(m=>`<option value="${m}">${m}</option>`).join('')}
+      </select>`;
+    // Brand tab switching
+    wrap.querySelectorAll('.phone-brand-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        wrap.querySelectorAll('.phone-brand-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const sel = wrap.querySelector('.phone-model-select');
+        sel.innerHTML = PHONE_MODELS[tab.dataset.brand].map(m=>`<option value="${m}">${m}</option>`).join('');
+      });
+    });
+  }
+
   const priceTag = body.querySelector('.price-tag');
   if (priceTag) body.insertBefore(wrap, priceTag);
   else body.appendChild(wrap);
-
-  // Brand tab switching
-  wrap.querySelectorAll('.phone-brand-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      wrap.querySelectorAll('.phone-brand-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      const sel = wrap.querySelector('.phone-model-select');
-      sel.innerHTML = PHONE_MODELS[tab.dataset.brand].map(m=>`<option value="${m}">${m}</option>`).join('');
-    });
-  });
 }
 
 // ─── Canvas Color Tinting ───
@@ -2284,30 +2316,20 @@ function applyColorTint(card, hexColor){
 
 // ─── Post-attach extras: phone model selector + canvas tinting ───
 function attachExtras(card){
-  // Phone model dropdown for case/cover sections
   const section = card.closest('section.category');
-  if (section && isPhoneCaseCategory(section.id)){
-    buildPhoneModelSelector(card);
+  const isCase = section && isPhoneCaseCategory(section.id);
+
+  // Phone model dropdown + hide colors for case/cover sections
+  if (isCase){
+    const fixedBrand = section.dataset.brandFilter || '';
+    buildPhoneModelSelector(card, fixedBrand);
+    const colorWrap = card.querySelector('[data-role="color-wrap"]');
+    if (colorWrap) colorWrap.style.display = 'none';
+    return;
   }
 
-  // Canvas color tinting on swatch click
-  const colorsBox = card.querySelector('[data-role="colors"]');
-  if (colorsBox){
-    colorsBox.querySelectorAll('.color-swatch').forEach(sw => {
-      sw.addEventListener('click', () => {
-        const hex = sw.style.background || colorHex(sw.dataset.color);
-        applyColorTint(card, hex);
-      });
-    });
-    // Apply tint for first swatch on load
-    const firstActive = colorsBox.querySelector('.color-swatch.active');
-    if (firstActive){
-      setTimeout(() => {
-        const hex = firstActive.style.background || colorHex(firstActive.dataset.color);
-        applyColorTint(card, hex);
-      }, 100);
-    }
-  }
+  // تغيير الصورة عند الضغط على اللون يتم عن طريق attachColorSwatches تلقائياً
+  // (الصور بتيجي من data-image المحفوظ مع كل لون في Supabase)
 }
 
 // ─── Init ───
