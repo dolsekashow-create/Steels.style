@@ -1495,6 +1495,21 @@ async function saveProduct(){
   const variants = collectVariants();
   if (!variants.length){ toast('أضف نوع واحد على الأقل', 'error'); return; }
 
+  // توليد slug من الاسم (حروف عربية + إنجليزية + أرقام)
+  function generateSlug(str){
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\u0600-\u06ff-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      || 'product-' + Date.now();
+  }
+
+  const id = document.getElementById('pmId').value;
+  const slug = id ? undefined : generateSlug(name) + '-' + Date.now().toString(36);
+
   const payload = {
     name,
     category: document.getElementById('pmCategory').value,
@@ -1505,8 +1520,8 @@ async function saveProduct(){
     variant_label: document.getElementById('pmVariantLabel').value,
     variants
   };
+  if (slug) payload.slug = slug;
 
-  const id = document.getElementById('pmId').value;
   let result;
   if (id){
     result = await sb.from('products').update(payload).eq('id', id);
@@ -1586,7 +1601,40 @@ let coverImages = {}; // key → url
 
 async function loadCoverImages(){
   const { data, error } = await sb.from('cover_images').select('*');
-  if (error){ console.error(error); return; }
+  if (error){
+    console.error(error);
+    const grid = document.getElementById('coverCardsGrid');
+    if (grid){
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;background:var(--bg-3);border:1px solid var(--danger);
+             border-radius:var(--radius);padding:20px;color:var(--text);">
+          <p style="color:var(--danger);font-weight:700;margin-bottom:12px">
+            ⚠️ جدول <code>cover_images</code> غير موجود في Supabase
+          </p>
+          <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:14px">
+            افتح <strong>Supabase → SQL Editor</strong> وشغّل الـ SQL التالي مرة واحدة:
+          </p>
+          <pre style="background:var(--bg-0);border:1px solid var(--line);border-radius:6px;
+               padding:14px;font-size:.8rem;color:var(--gold-1);overflow-x:auto;direction:ltr;text-align:left">
+CREATE TABLE IF NOT EXISTS public.cover_images (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  brand_key    text UNIQUE NOT NULL,
+  brand_label  text,
+  image_url    text,
+  updated_at   timestamptz DEFAULT now()
+);
+ALTER TABLE public.cover_images ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public read"  ON public.cover_images FOR SELECT USING (true);
+CREATE POLICY "anon insert"  ON public.cover_images FOR INSERT WITH CHECK (true);
+CREATE POLICY "anon update"  ON public.cover_images FOR UPDATE USING (true);
+          </pre>
+          <p style="color:var(--text-dim);font-size:.8rem;margin-top:10px">
+            بعد ما تشغّله، ارجع للصفحة دي واعمل Refresh.
+          </p>
+        </div>`;
+    }
+    return;
+  }
   coverImages = {};
   (data||[]).forEach(row => { coverImages[row.brand_key] = row.image_url; });
   renderCoverCards();
