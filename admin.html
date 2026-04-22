@@ -189,17 +189,33 @@
     font-size:.72rem;font-weight:600;
   }
 
-  /* Variant editor */
-  .variants-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+  /* Variant editor (color-based) */
+  .variants-list{display:flex;flex-direction:column;gap:12px;margin-bottom:10px}
   .variant-row{
     background:var(--bg-3);border:1px solid var(--line);border-radius:var(--radius-sm);
-    padding:12px;position:relative;
+    padding:14px 14px 14px 42px;position:relative;
+    transition:border-color .2s;
   }
+  .variant-row:hover{border-color:rgba(212,175,55,.3)}
   .variant-row .remove-variant{
-    position:absolute;top:10px;left:10px;background:transparent;border:none;
-    color:var(--danger);cursor:pointer;font-size:1.2rem;
+    position:absolute;top:10px;left:10px;background:transparent;border:1px solid transparent;
+    color:var(--danger);cursor:pointer;font-size:1.1rem;
+    width:28px;height:28px;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
   }
-  .variant-row h4{color:var(--gold-2);font-size:.9rem;margin-bottom:10px}
+  .variant-row .remove-variant:hover{
+    background:rgba(192,64,64,.1);border-color:var(--danger);
+  }
+  .variant-row h4{
+    color:var(--gold-2);font-size:.9rem;margin-bottom:12px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .variant-row h4 .color-dot-preview{
+    width:16px;height:16px;border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.25);
+    box-shadow:0 1px 3px rgba(0,0,0,.4);flex-shrink:0;
+  }
   .tag-input{
     display:flex;flex-wrap:wrap;gap:6px;padding:8px;
     background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);min-height:44px;
@@ -257,6 +273,38 @@
     width:18px;height:18px;border-radius:50%;
     border:2px solid rgba(255,255,255,.3);flex-shrink:0;
     background:#f00;
+  }
+
+  /* زر اختيار اللون داخل صف اللون */
+  .btn-pick-color{
+    display:flex;align-items:center;gap:10px;width:100%;
+    padding:10px 14px;
+    background:var(--bg-2);border:1px solid var(--line);
+    border-radius:var(--radius-sm);color:var(--text);
+    font-family:'Cairo';font-size:.88rem;font-weight:600;cursor:pointer;
+    transition:all .2s;justify-content:flex-start;
+  }
+  .btn-pick-color:hover{border-color:var(--gold-3);background:var(--bg-3)}
+  .btn-pick-color .preview-dot{
+    width:22px;height:22px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.25);flex-shrink:0;
+    background:#888;
+    box-shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+  .btn-pick-color .color-name-txt{flex:1;text-align:right}
+  .btn-pick-color .chev{color:var(--text-dim);font-size:.75rem;opacity:.6}
+
+  /* زر إضافة لون جديد (أسفل القائمة) */
+  .btn-add-variant{
+    display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    padding:12px;margin-top:4px;
+    background:transparent;border:1.5px dashed var(--gold-3);
+    border-radius:var(--radius-sm);color:var(--gold-2);
+    font-family:'Cairo';font-size:.9rem;font-weight:700;cursor:pointer;
+    transition:all .2s;
+  }
+  .btn-add-variant:hover{
+    background:rgba(212,175,55,.06);border-color:var(--gold-1);color:var(--gold-1);
   }
 
   /* popup الـ picker */
@@ -759,7 +807,7 @@
         </div>
         <div class="form-group">
           <label>الفئة *</label>
-          <select id="pmCategory" onchange="toggleVariantType()"></select>
+          <select id="pmCategory"></select>
         </div>
       </div>
       <div class="form-group">
@@ -778,19 +826,25 @@
       </div>
 
       <div class="form-group">
-        <label>عنوان اختيار الأنواع (يظهر قبل الـ dropdown)</label>
-        <select id="pmVariantLabel">
-          <option value="الخامة">الخامة — للتيشرتات والهوديات</option>
-          <option value="الحجم">الحجم — للبراويز</option>
-          <option value="الموديل">الموديل — لكفرات الموبايل</option>
-          <option value="النوع">النوع</option>
-          <option value="">فاضي — ممنوع إظهار الاختيار</option>
-        </select>
-        <small style="color:var(--text-dim);font-size:.75rem">الاختيار ده بيتحكم في الكلمة قبل dropdown الأنواع (مثلاً: "اختر الخامة" أو "اختر الحجم")</small>
+        <label>الخامة (اختياري)</label>
+        <input type="text" id="pmMaterial" placeholder="مثال: قطن 100٪ — صوف — جلد" list="materialsList">
+        <datalist id="materialsList">
+          <option value="قطن 100٪">
+          <option value="قطن بيماوي">
+          <option value="قطن بولي">
+          <option value="صوف">
+          <option value="جلد طبيعي">
+          <option value="جلد صناعي">
+          <option value="دنيم">
+          <option value="كتان">
+          <option value="بوليستر">
+          <option value="مخمل">
+        </datalist>
+        <small style="color:var(--text-dim);font-size:.75rem">خامة المنتج (تظهر للعميل في صفحة المنتج)</small>
       </div>
 
       <div class="form-group">
-        <label>صورة المنتج</label>
+        <label>صورة المنتج الرئيسية</label>
         <div class="img-upload-wrap">
           <input type="file" id="pmImageFile" accept="image/*" style="display:none" onchange="uploadProductImage(event)">
           <label for="pmImageFile" style="cursor:pointer;color:var(--gold-2)">📤 اختر صورة من الجهاز</label>
@@ -801,9 +855,12 @@
       </div>
 
       <div class="form-group">
-        <label>الأنواع (Variants) — كل نوع له سعره، ألوانه، ومقاساته</label>
+        <label>الألوان المتاحة — كل لون له سعره، مقاساته، وصورته</label>
         <div class="variants-list" id="variantsList"></div>
-        <button class="btn btn-ghost btn-small" onclick="addVariant()" type="button">+ إضافة نوع/خامة</button>
+        <button class="btn-add-variant" onclick="addVariant()" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          إضافة لون جديد
+        </button>
       </div>
     </div>
     <div class="modal-foot">
@@ -1029,8 +1086,8 @@ function renderProducts(){
           <div>
             <div class="name">${p.name} <span class="cat-badge">${catName(p.category)}</span></div>
             <div class="meta">
-              ${p.variants.length} نوع — 
-              ابتداءً من ${Math.min(...p.variants.map(v=>v.price||0))} ₪ — 
+              ${(p.variants||[]).length} لون — 
+              ابتداءً من ${(p.variants||[]).length ? Math.min(...p.variants.map(v=>Number(v.price)||0)) : 0} ₪ — 
               ${p.active ? '✅ مفعل' : '⛔ غير مفعل'}
             </div>
           </div>
@@ -1057,13 +1114,63 @@ function openProductForm(){
   document.getElementById('pmDesc').value = '';
   document.getElementById('pmOrder').value = 0;
   document.getElementById('pmActive').value = 'true';
-  document.getElementById('pmVariantLabel').value = 'الخامة';
+  document.getElementById('pmMaterial').value = '';
   document.getElementById('pmImage').value = '';
   document.getElementById('pmImagePreview').style.display = 'none';
   document.getElementById('pmUploadStatus').textContent = '';
   document.getElementById('variantsList').innerHTML = '';
-  addVariant({type:'', price:0, colors:[], sizes:[]});
+  addVariant(); // start with one empty color row
   document.getElementById('productModal').classList.add('open');
+}
+
+// ─── تطبيع الـ variants القديمة للشكل الجديد ───
+// الشكل القديم: [{ type, price, colors:[{name,hex,image}], sizes:[...] }]
+// الشكل الجديد: [{ name, hex, price, sizes:[...], image }]   ← كل عنصر لون واحد
+function normalizeVariants(variants){
+  if (!Array.isArray(variants) || !variants.length) return [];
+  const result = [];
+  variants.forEach(v => {
+    // الشكل الجديد: في name أو hex على مستوى الـ variant نفسه
+    if (v && (v.name || v.hex) && !Array.isArray(v.colors)){
+      result.push({
+        name:  v.name  || '',
+        hex:   v.hex   || (ADMIN_COLOR_MAP[v.name] || '#888888'),
+        price: Number(v.price) || 0,
+        sizes: Array.isArray(v.sizes) ? v.sizes.slice() : [],
+        image: v.image || ''
+      });
+      return;
+    }
+    // الشكل القديم: فك الألوان لعناصر منفصلة
+    const colors = Array.isArray(v.colors) ? v.colors : [];
+    const price = Number(v.price) || 0;
+    const sizes = Array.isArray(v.sizes) ? v.sizes.slice() : [];
+    const fallbackImg = v.image || '';
+    if (!colors.length){
+      // variant بدون ألوان — نخلقه لون "افتراضي"
+      result.push({
+        name:  v.type || 'افتراضي',
+        hex:   '#888888',
+        price, sizes,
+        image: fallbackImg
+      });
+      return;
+    }
+    colors.forEach(c => {
+      const cname = typeof c === 'object' ? (c.name || '') : String(c || '');
+      const chex  = typeof c === 'object'
+        ? (c.hex  || ADMIN_COLOR_MAP[cname] || '#888888')
+        : (ADMIN_COLOR_MAP[cname] || '#888888');
+      const cimg  = typeof c === 'object' ? (c.image || fallbackImg) : fallbackImg;
+      result.push({
+        name:  cname,
+        hex:   chex,
+        price, sizes: sizes.slice(),
+        image: cimg
+      });
+    });
+  });
+  return result;
 }
 
 function editProduct(id){
@@ -1086,7 +1193,7 @@ function editProduct(id){
   document.getElementById('pmDesc').value = p.description || '';
   document.getElementById('pmOrder').value = p.display_order || 0;
   document.getElementById('pmActive').value = String(p.active);
-  document.getElementById('pmVariantLabel').value = p.variant_label || 'الخامة';
+  document.getElementById('pmMaterial').value = p.material || '';
   document.getElementById('pmImage').value = p.image_url || '';
   if (p.image_url){
     document.getElementById('pmImagePreview').src = p.image_url;
@@ -1096,7 +1203,9 @@ function editProduct(id){
   }
   document.getElementById('pmUploadStatus').textContent = '';
   document.getElementById('variantsList').innerHTML = '';
-  (p.variants||[]).forEach(v => addVariant(v));
+  const normalized = normalizeVariants(p.variants || []);
+  if (normalized.length) normalized.forEach(v => addVariant(v));
+  else addVariant();
   document.getElementById('productModal').classList.add('open');
 }
 
@@ -1105,11 +1214,36 @@ function closeProductForm(){
 }
 
 function toggleVariantType(){
-  // visual helper - for non-tshirts we typically have one variant without a 'type'
-  // leaving freedom for admin to structure as needed
+  // legacy stub - kept for safety (no callers after refactor)
 }
 
-// Variant editor row
+// ─── تحديث عنوان الصف + نقطة اللون في الـ header بعد تغيير اللون ───
+function refreshVariantRowHeader(row){
+  const nameEl = row.querySelector('[data-f="colorName"]');
+  const hexEl  = row.querySelector('[data-f="colorHex"]');
+  const dot    = row.querySelector('h4 .color-dot-preview');
+  const title  = row.querySelector('h4 .variant-title-name');
+  const pickBtnDot  = row.querySelector('.btn-pick-color .preview-dot');
+  const pickBtnName = row.querySelector('.btn-pick-color .color-name-txt');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const hex  = hexEl  ? (hexEl.value.trim() || '#888888') : '#888888';
+  if (dot) dot.style.background = hex || '#888888';
+  if (title) title.textContent = name ? `— ${name}` : '';
+  if (pickBtnDot) pickBtnDot.style.background = hex || '#888888';
+  if (pickBtnName) pickBtnName.textContent = name || 'اضغط لاختيار اللون';
+}
+
+// ─── ترقيم الصفوف بعد أي إضافة/حذف ───
+function renumberVariantRows(){
+  document.querySelectorAll('#variantsList .variant-row').forEach((row, i) => {
+    const idxEl = row.querySelector('.variant-idx');
+    if (idxEl) idxEl.textContent = '#' + (i+1);
+    row.dataset.idx = i;
+  });
+}
+
+// ─── إضافة صف لون جديد ───
+// data = {name, hex, price, sizes:[...], image}
 function addVariant(data = {}){
   const list = document.getElementById('variantsList');
   const idx = list.children.length;
@@ -1117,86 +1251,91 @@ function addVariant(data = {}){
   row.className = 'variant-row';
   row.dataset.idx = idx;
 
-  // بناء الألوان الموجودة — كل لون ممكن يكون string أو {name,hex}
-  const existingColors = (data.colors||[]).map(c => {
-    if (typeof c === 'object' && c.name) return c;
-    // لو string — دور على الـ hex من الـ COLOR_MAP أو اعمله hex
-    return { name: c, hex: ADMIN_COLOR_MAP[c] || '#888888' };
-  });
-
-  const colorTagsHtml = existingColors.map((c,i) =>
-    `<span class="color-tag" data-name="${c.name}" data-hex="${c.hex}" data-image="${c.image||''}">
-      <span class="color-tag-dot" style="background:${c.hex}"></span>
-      ${c.name}
-      ${c.image ? '<span class="color-has-img" title="عنده صورة">🖼</span>' : ''}
-      <button type="button" class="btn-color-img" onclick="uploadColorImage(this)" title="رفع صورة للون">📷</button>
-      <button type="button" class="color-tag-remove" onclick="removeColorTag(this)">×</button>
-    </span>`
-  ).join('');
+  const name  = data.name  || '';
+  const hex   = data.hex   || (ADMIN_COLOR_MAP[name] || '#888888');
+  const price = Number(data.price) || 0;
+  const sizes = Array.isArray(data.sizes) ? data.sizes : [];
+  const image = data.image || '';
 
   row.innerHTML = `
-    <button class="remove-variant" type="button" onclick="this.parentElement.remove()" title="حذف">✕</button>
-    <h4>النوع / الخامة #${idx+1}</h4>
-    <div class="form-grid">
-      <div class="form-group">
-        <label>اسم النوع (اختياري)</label>
-        <input type="text" data-f="type" value="${data.type||''}" placeholder="مثال: عادية">
-      </div>
-      <div class="form-group">
-        <label>السعر (شيقل) *</label>
-        <input type="number" data-f="price" value="${data.price||0}" min="0" step="1">
-      </div>
-    </div>
+    <button class="remove-variant" type="button" onclick="removeVariantRow(this)" title="حذف اللون">✕</button>
+    <h4>
+      <span class="color-dot-preview" style="background:${hex}"></span>
+      اللون <span class="variant-idx">#${idx+1}</span>
+      <span class="variant-title-name" style="color:var(--text);font-weight:600">${name?'— '+name:''}</span>
+    </h4>
+
+    <!-- hidden inputs لحفظ اللون -->
+    <input type="hidden" data-f="colorName" value="${name.replace(/"/g,'&quot;')}">
+    <input type="hidden" data-f="colorHex"  value="${hex}">
+
     <div class="form-group">
-      <label>الألوان</label>
-      <div class="color-picker-wrap" data-f="colors">
-        <div class="color-tags">${colorTagsHtml}</div>
-        <button type="button" class="btn-open-picker" onclick="openColorPicker(this)">
-          <span class="preview-dot" style="background:#e63946"></span>
-          + إضافة لون
+      <label>اللون *</label>
+      <div class="color-picker-wrap">
+        <button type="button" class="btn-pick-color" onclick="openColorPicker(this)">
+          <span class="preview-dot" style="background:${hex}"></span>
+          <span class="color-name-txt">${name || 'اضغط لاختيار اللون'}</span>
+          <span class="chev">▼</span>
         </button>
         <div class="picker-popup">
           <canvas class="picker-spectrum" width="248" height="160"></canvas>
-          <div class="picker-spectrum-overlay" style="position:relative;margin-bottom:12px">
-            <!-- spectrum rendered in JS -->
-          </div>
+          <div class="picker-spectrum-overlay" style="position:relative;margin-bottom:12px"></div>
           <div class="picker-hue"><div class="hue-cursor" style="left:0%"></div></div>
           <div class="picker-inputs">
-            <input type="text" class="picker-name" placeholder="اسم اللون (عربي)" value="">
-            <input type="text" class="picker-hex" placeholder="#HEX" value="#e63946" maxlength="7">
+            <input type="text" class="picker-name" placeholder="اسم اللون (عربي)" value="${name.replace(/"/g,'&quot;')}">
+            <input type="text" class="picker-hex" placeholder="#HEX" value="${hex}" maxlength="7">
           </div>
           <div class="picker-bottom">
-            <div class="picker-preview" style="background:#e63946"></div>
-            <button type="button" class="btn-add-color" onclick="addColorFromPicker(this)">✔ إضافة اللون</button>
+            <div class="picker-preview" style="background:${hex}"></div>
+            <button type="button" class="btn-add-color" onclick="applyColorToRow(this)">✔ تأكيد اللون</button>
           </div>
         </div>
       </div>
     </div>
-    <div class="form-group">
-      <label>المقاسات (اكتب ثم Enter) — اتركها فارغة لمنتجات بدون مقاس</label>
-      <div class="tag-input" data-f="sizes">
-        ${(data.sizes||[]).map(s=>`<span class="tag">${s}<button type="button" onclick="this.parentElement.remove()">×</button></span>`).join('')}
-        <input type="text" placeholder="اضغط Enter لإضافة مقاس" onkeydown="addTag(event)">
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>السعر (شيقل) *</label>
+        <input type="number" data-f="price" value="${price}" min="0" step="1">
+      </div>
+      <div class="form-group">
+        <label>المقاسات (اكتب ثم Enter)</label>
+        <div class="tag-input" data-f="sizes">
+          ${sizes.map(s=>`<span class="tag">${s}<button type="button" onclick="this.parentElement.remove()">×</button></span>`).join('')}
+          <input type="text" placeholder="S, M, L..." onkeydown="handleTagInput(event)">
+        </div>
       </div>
     </div>
-    <div class="form-group">
-      <label>صورة النوع/الخامة (اختياري)</label>
+
+    <div class="form-group" style="margin-bottom:0">
+      <label>صورة هذا اللون (اختياري)</label>
       <div class="variant-img-wrap" onclick="triggerVariantImgUpload(this)">
         <input type="file" accept="image/*" style="display:none" onchange="uploadVariantImage(event, this.closest('.variant-row'))">
         <label class="variant-img-label" style="pointer-events:none">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
           اختر صورة من الجهاز
         </label>
-        <img class="variant-img-preview" src="${data.image||''}" alt="" style="${data.image?'':'display:none'}">
+        <img class="variant-img-preview" src="${image}" alt="" style="${image?'':'display:none'}">
         <div class="variant-img-status"></div>
       </div>
-      <input type="text" data-f="variantImage" value="${data.image||''}" placeholder="أو ألصق رابط صورة" style="margin-top:7px" oninput="syncVariantImgPreview(this)">
+      <input type="text" data-f="variantImage" value="${image}" placeholder="أو ألصق رابط صورة" style="margin-top:7px" oninput="syncVariantImgPreview(this)">
     </div>
   `;
   list.appendChild(row);
 
   // تهيئة الـ picker في الـ row الجديد
   initPickerInRow(row);
+  refreshVariantRowHeader(row);
+}
+
+function removeVariantRow(btn){
+  const row = btn.closest('.variant-row');
+  if (!row) return;
+  const list = row.parentElement;
+  row.remove();
+  renumberVariantRows();
+  // لو مفيش ولا لون متبقي — أضف صف فاضي تلقائياً
+  if (list && !list.children.length) addVariant();
 }
 
 // ─── Admin color map (للـ backward compat مع ألوان قديمة) ───
@@ -1346,13 +1485,30 @@ function initPickerInRow(row){
     }
   });
 
+  // ── Sync state من hex موجود (يُستدعى عند فتح الـ picker) ──
+  function syncFromHex(v){
+    v = (v||'').trim();
+    if (!v.startsWith('#')) v = '#' + v;
+    if (!/^#[0-9a-fA-F]{6}$/.test(v)) return false;
+    [hue, sat, bri] = hexToHsv(v);
+    hueCursor.style.left = (hue/360*100) + '%';
+    drawSpectrum();
+    positionSpecCursor();
+    preview.style.background = v;
+    previewDot.style.background = v;
+    specCursor.style.background = v;
+    hexInput.value = v;
+    return true;
+  }
+
   // حفظ refs على الـ wrap عشان نوصلها من زر الإضافة
-  wrap._picker = { hue:()=>hue, sat:()=>sat, bri:()=>bri, hexInput, nameInput, syncFromHsv, drawSpectrum, positionSpecCursor };
+  wrap._picker = { hue:()=>hue, sat:()=>sat, bri:()=>bri, hexInput, nameInput, syncFromHsv, syncFromHex, drawSpectrum, positionSpecCursor };
 }
 
 function openColorPicker(btn){
   const wrap  = btn.closest('.color-picker-wrap');
   const popup = wrap.querySelector('.picker-popup');
+  const row   = btn.closest('.variant-row');
 
   // إغلاق أي picker تاني
   if (_activePicker && _activePicker !== popup){
@@ -1363,8 +1519,19 @@ function openColorPicker(btn){
 
   if (popup.classList.contains('open')){
     const p = wrap._picker;
-    // أول مرة يفتح: ارسم الـ spectrum
-    setTimeout(()=>{ p.drawSpectrum(); p.positionSpecCursor(); p.syncFromHsv(); }, 10);
+    // اقرأ اللون/الاسم الحاليين من hidden inputs للصف
+    const currentHex  = row ? (row.querySelector('[data-f="colorHex"]').value  || '#e63946') : '#e63946';
+    const currentName = row ? (row.querySelector('[data-f="colorName"]').value || '') : '';
+    p.nameInput.value = currentName;
+    p.hexInput.value  = currentHex;
+    // أول مرة يفتح: ارسم الـ spectrum وsync الحالة من الـ hex الحالي
+    setTimeout(()=>{
+      p.drawSpectrum();
+      if (!p.syncFromHex(currentHex)){
+        p.positionSpecCursor();
+        p.syncFromHsv();
+      }
+    }, 10);
   }
 }
 
@@ -1376,79 +1543,31 @@ document.addEventListener('click', e=>{
   }
 });
 
-function addColorFromPicker(btn){
+// ─── تطبيق اللون المختار على الصف (بدل addColorFromPicker القديمة) ───
+function applyColorToRow(btn){
   const popup = btn.closest('.picker-popup');
   const wrap  = btn.closest('.color-picker-wrap');
+  const row   = btn.closest('.variant-row');
   const p     = wrap._picker;
   const hex   = p.hexInput.value.trim() || '#888888';
   const name  = p.nameInput.value.trim();
 
-  if (!name){ p.nameInput.focus(); p.nameInput.style.borderColor='var(--danger)'; return; }
+  if (!name){
+    p.nameInput.focus();
+    p.nameInput.style.borderColor = 'var(--danger)';
+    toast('أدخل اسم اللون', 'error');
+    return;
+  }
   p.nameInput.style.borderColor = '';
 
-  const tagsWrap = wrap.querySelector('.color-tags');
-  const tag = document.createElement('span');
-  tag.className = 'color-tag';
-  tag.dataset.name  = name;
-  tag.dataset.hex   = hex;
-  tag.dataset.image = '';
-  tag.innerHTML = `
-    <span class="color-tag-dot" style="background:${hex}"></span>
-    ${name}
-    <button type="button" class="btn-color-img" onclick="uploadColorImage(this)" title="رفع صورة للون">📷</button>
-    <button type="button" class="color-tag-remove" onclick="removeColorTag(this)">×</button>`;
-  tagsWrap.appendChild(tag);
+  // خزّن في الـ hidden inputs للصف
+  row.querySelector('[data-f="colorName"]').value = name;
+  row.querySelector('[data-f="colorHex"]').value  = hex;
 
-  p.nameInput.value = '';
+  refreshVariantRowHeader(row);
+
   popup.classList.remove('open');
   _activePicker = null;
-}
-
-function removeColorTag(btn){
-  btn.closest('.color-tag').remove();
-}
-
-// ─── رفع صورة لكل لون ───
-async function uploadColorImage(btn){
-  const tag = btn.closest('.color-tag');
-  if (!tag) return;
-
-  // إنشاء input مؤقت
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.style.display = 'none';
-  document.body.appendChild(input);
-
-  input.onchange = async () => {
-    const file = input.files[0];
-    input.remove();
-    if (!file) return;
-
-    btn.textContent = '⏳';
-    btn.disabled = true;
-    try {
-      const url = await uploadFile(file, 'products');
-      tag.dataset.image = url;
-      // أضف أيقونة تأكيد
-      const existingIcon = tag.querySelector('.color-has-img');
-      if (existingIcon) existingIcon.remove();
-      const icon = document.createElement('span');
-      icon.className = 'color-has-img';
-      icon.title = url;
-      icon.textContent = '🖼';
-      tag.insertBefore(icon, btn);
-      btn.textContent = '📷';
-      btn.disabled = false;
-      toast('✓ تم رفع الصورة', 'success');
-    } catch(err){
-      btn.textContent = '📷';
-      btn.disabled = false;
-      toast('✕ فشل رفع الصورة', 'error');
-    }
-  };
-
-  input.click();
 }
 
 function triggerVariantImgUpload(wrap){
@@ -1506,20 +1625,16 @@ function collectVariants(){
   const rows = document.querySelectorAll('#variantsList .variant-row');
   const variants = [];
   rows.forEach(row => {
-    const type = row.querySelector('[data-f="type"]').value.trim();
+    const name  = (row.querySelector('[data-f="colorName"]').value || '').trim();
+    const hex   = (row.querySelector('[data-f="colorHex"]').value  || '#888888').trim();
     const price = Number(row.querySelector('[data-f="price"]').value) || 0;
-    // جمع الألوان كـ {name, hex, image}
-    const colors = [...row.querySelectorAll('[data-f="colors"] .color-tag')].map(tag => ({
-      name:  tag.dataset.name  || '',
-      hex:   tag.dataset.hex   || '#888888',
-      image: tag.dataset.image || ''
-    }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
     const imgInput = row.querySelector('[data-f="variantImage"]');
-    const variantImage = imgInput ? imgInput.value.trim() : '';
-    const v = { price, colors, sizes };
-    if (type) v.type = type;
-    if (variantImage) v.image = variantImage;
+    const image = imgInput ? imgInput.value.trim() : '';
+
+    // لا نتجاهل صف فاضي الاسم — هنعمله validate في saveProduct
+    const v = { name, hex, price, sizes };
+    if (image) v.image = image;
     variants.push(v);
   });
   return variants;
@@ -1530,16 +1645,29 @@ async function saveProduct(){
   if (!name){ toast('أدخل اسم المنتج', 'error'); return; }
 
   const variants = collectVariants();
-  if (!variants.length){ toast('أضف نوع واحد على الأقل', 'error'); return; }
+  if (!variants.length){ toast('أضف لون واحد على الأقل', 'error'); return; }
+
+  // Validation: كل لون لازم له اسم وسعر > 0 ومقاس واحد على الأقل
+  for (let i = 0; i < variants.length; i++){
+    const v = variants[i];
+    if (!v.name){ toast(`اللون #${i+1}: اختر اللون أولاً`, 'error'); return; }
+    if (!v.price || v.price <= 0){ toast(`اللون #${i+1} (${v.name}): أدخل سعر صحيح`, 'error'); return; }
+    if (!v.sizes || !v.sizes.length){ toast(`اللون #${i+1} (${v.name}): أضف مقاس واحد على الأقل`, 'error'); return; }
+  }
+
+  // تحقق من عدم تكرار اسم اللون
+  const names = variants.map(v => v.name);
+  const dup = names.find((n,i) => names.indexOf(n) !== i);
+  if (dup){ toast(`اللون "${dup}" مكرر — كل لون لازم اسم مختلف`, 'error'); return; }
 
   const payload = {
     name,
     category: document.getElementById('pmCategory').value,
     description: document.getElementById('pmDesc').value.trim(),
+    material: document.getElementById('pmMaterial').value.trim() || null,
     image_url: document.getElementById('pmImage').value.trim(),
     display_order: Number(document.getElementById('pmOrder').value) || 0,
     active: document.getElementById('pmActive').value === 'true',
-    variant_label: document.getElementById('pmVariantLabel').value,
     variants
   };
 
@@ -1550,7 +1678,20 @@ async function saveProduct(){
   } else {
     result = await sb.from('products').insert([payload]);
   }
-  if (result.error){ console.error(result.error); toast('فشل الحفظ', 'error'); return; }
+  if (result.error){
+    console.error(result.error);
+    // لو عمود material مش موجود في الجدول — أعد المحاولة بدونه
+    const errMsg = (result.error.message || '').toLowerCase();
+    if (errMsg.includes('material') || errMsg.includes('column')){
+      delete payload.material;
+      if (id) result = await sb.from('products').update(payload).eq('id', id);
+      else    result = await sb.from('products').insert([payload]);
+      if (result.error){ toast('فشل الحفظ: ' + result.error.message, 'error'); return; }
+    } else {
+      toast('فشل الحفظ: ' + result.error.message, 'error');
+      return;
+    }
+  }
   toast('✓ تم الحفظ', 'success');
   closeProductForm();
   await loadProducts();
