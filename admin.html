@@ -231,6 +231,13 @@
     width:14px;height:14px;border-radius:50%;flex-shrink:0;
     border:1px solid rgba(255,255,255,.2);
   }
+  .btn-color-img{
+    background:none;border:none;cursor:pointer;padding:0 2px;
+    font-size:.85rem;opacity:.7;transition:opacity .2s;line-height:1;
+  }
+  .btn-color-img:hover{opacity:1}
+  .btn-color-img:disabled{opacity:.4;cursor:wait}
+  .color-has-img{font-size:.8rem;cursor:help}
   .color-tag-remove{
     background:transparent;border:none;color:var(--danger);
     cursor:pointer;font-size:.9rem;font-weight:900;padding:0;line-height:1;
@@ -731,7 +738,7 @@ function toast(msg, type=''){
 
 // ─── Auth ───
 function doLogin(e){
-  if (e) e.preventDefault();
+  e.preventDefault();
   const pw = document.getElementById('pwInput').value;
   if (pw === ADMIN_PW){
     sessionStorage.setItem('steels_admin', '1');
@@ -739,7 +746,6 @@ function doLogin(e){
   } else {
     document.getElementById('loginErr').textContent = 'كلمة المرور خاطئة';
   }
-  return false;
 }
 
 function logout(){
@@ -970,9 +976,11 @@ function addVariant(data = {}){
   });
 
   const colorTagsHtml = existingColors.map((c,i) =>
-    `<span class="color-tag" data-name="${c.name}" data-hex="${c.hex}">
+    `<span class="color-tag" data-name="${c.name}" data-hex="${c.hex}" data-image="${c.image||''}">
       <span class="color-tag-dot" style="background:${c.hex}"></span>
       ${c.name}
+      ${c.image ? '<span class="color-has-img" title="عنده صورة">🖼</span>' : ''}
+      <button type="button" class="btn-color-img" onclick="uploadColorImage(this)" title="رفع صورة للون">📷</button>
       <button type="button" class="color-tag-remove" onclick="removeColorTag(this)">×</button>
     </span>`
   ).join('');
@@ -1216,19 +1224,19 @@ function addColorFromPicker(btn){
   if (!name){ p.nameInput.focus(); p.nameInput.style.borderColor='var(--danger)'; return; }
   p.nameInput.style.borderColor = '';
 
-  // إضافة الـ tag
   const tagsWrap = wrap.querySelector('.color-tags');
   const tag = document.createElement('span');
   tag.className = 'color-tag';
-  tag.dataset.name = name;
-  tag.dataset.hex  = hex;
+  tag.dataset.name  = name;
+  tag.dataset.hex   = hex;
+  tag.dataset.image = '';
   tag.innerHTML = `
     <span class="color-tag-dot" style="background:${hex}"></span>
     ${name}
+    <button type="button" class="btn-color-img" onclick="uploadColorImage(this)" title="رفع صورة للون">📷</button>
     <button type="button" class="color-tag-remove" onclick="removeColorTag(this)">×</button>`;
   tagsWrap.appendChild(tag);
 
-  // reset الـ inputs
   p.nameInput.value = '';
   popup.classList.remove('open');
   _activePicker = null;
@@ -1236,6 +1244,49 @@ function addColorFromPicker(btn){
 
 function removeColorTag(btn){
   btn.closest('.color-tag').remove();
+}
+
+// ─── رفع صورة لكل لون ───
+async function uploadColorImage(btn){
+  const tag = btn.closest('.color-tag');
+  if (!tag) return;
+
+  // إنشاء input مؤقت
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    input.remove();
+    if (!file) return;
+
+    btn.textContent = '⏳';
+    btn.disabled = true;
+    try {
+      const url = await uploadFile(file, 'products');
+      tag.dataset.image = url;
+      // أضف أيقونة تأكيد
+      const existingIcon = tag.querySelector('.color-has-img');
+      if (existingIcon) existingIcon.remove();
+      const icon = document.createElement('span');
+      icon.className = 'color-has-img';
+      icon.title = url;
+      icon.textContent = '🖼';
+      tag.insertBefore(icon, btn);
+      btn.textContent = '📷';
+      btn.disabled = false;
+      toast('✓ تم رفع الصورة', 'success');
+    } catch(err){
+      btn.textContent = '📷';
+      btn.disabled = false;
+      toast('✕ فشل رفع الصورة', 'error');
+    }
+  };
+
+  input.click();
 }
 
 function handleTagInput(e){
@@ -1256,10 +1307,11 @@ function collectVariants(){
   rows.forEach(row => {
     const type = row.querySelector('[data-f="type"]').value.trim();
     const price = Number(row.querySelector('[data-f="price"]').value) || 0;
-    // جمع الألوان كـ {name, hex}
+    // جمع الألوان كـ {name, hex, image}
     const colors = [...row.querySelectorAll('[data-f="colors"] .color-tag')].map(tag => ({
-      name: tag.dataset.name || '',
-      hex:  tag.dataset.hex  || '#888888'
+      name:  tag.dataset.name  || '',
+      hex:   tag.dataset.hex   || '#888888',
+      image: tag.dataset.image || ''
     }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
     const v = { price, colors, sizes };
@@ -1642,9 +1694,7 @@ document.getElementById('categoryModal').addEventListener('click', (e)=>{
 });
 
 // ─── Auto-login if session exists ───
-document.addEventListener('DOMContentLoaded', function(){
-  if (sessionStorage.getItem('steels_admin') === '1') showDash();
-});
+if (sessionStorage.getItem('steels_admin') === '1') showDash();
 </script>
 </body>
 </html>
