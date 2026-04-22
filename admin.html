@@ -501,6 +501,24 @@
   @media(max-width:420px){
     .cover-cards-grid{grid-template-columns:1fr}
   }
+  /* ── صورة النوع/الخامة ── */
+  .variant-img-wrap{
+    border:2px dashed var(--line);border-radius:var(--radius-sm);
+    padding:12px;text-align:center;cursor:pointer;transition:all .2s;
+    background:var(--bg-2);
+  }
+  .variant-img-wrap:hover{border-color:var(--gold-3);background:rgba(212,175,55,.04)}
+  .variant-img-preview{
+    max-width:100px;max-height:80px;object-fit:cover;
+    border-radius:6px;border:1px solid var(--line);
+    display:block;margin:8px auto 0;
+  }
+  .variant-img-label{
+    color:var(--gold-2);font-size:.82rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .variant-img-status{font-size:.78rem;color:var(--gold-2);margin-top:5px;min-height:16px}
+
   .order-details h5{color:var(--gold-2);margin-bottom:6px;font-size:.85rem}
   .order-item{padding:5px 0;border-bottom:1px dashed var(--line);font-size:.8rem}
   .order-item:last-child{border-bottom:none}
@@ -851,8 +869,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ─── Supabase ───
-const SUPABASE_URL = 'https://mffpfxglevnwzyanbexr.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_lPa98YbCXdXpGJxitr7nNQ_EC0q_71g';
+const SUPABASE_URL = 'https://jitmkznqjcooznhttvat.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppdG1rem5xamNvb3puaHR0dmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2OTM4NzQsImV4cCI6MjA5MjI2OTg3NH0.kraru_UKW4e54TqlWrMEltin9mrOKRbFEKd_CoRWjR8';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_PW = 'nimda321';
@@ -1161,6 +1179,19 @@ function addVariant(data = {}){
         <input type="text" placeholder="اضغط Enter لإضافة مقاس" onkeydown="addTag(event)">
       </div>
     </div>
+    <div class="form-group">
+      <label>صورة النوع/الخامة (اختياري)</label>
+      <div class="variant-img-wrap" onclick="triggerVariantImgUpload(this)">
+        <input type="file" accept="image/*" style="display:none" onchange="uploadVariantImage(event, this.closest('.variant-row'))">
+        <label class="variant-img-label" style="pointer-events:none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+          اختر صورة من الجهاز
+        </label>
+        <img class="variant-img-preview" src="${data.image||''}" alt="" style="${data.image?'':'display:none'}">
+        <div class="variant-img-status"></div>
+      </div>
+      <input type="text" data-f="variantImage" value="${data.image||''}" placeholder="أو ألصق رابط صورة" style="margin-top:7px" oninput="syncVariantImgPreview(this)">
+    </div>
   `;
   list.appendChild(row);
 
@@ -1420,6 +1451,45 @@ async function uploadColorImage(btn){
   input.click();
 }
 
+function triggerVariantImgUpload(wrap){
+  wrap.querySelector('input[type="file"]').click();
+}
+
+function syncVariantImgPreview(input){
+  const row = input.closest('.variant-row');
+  const preview = row.querySelector('.variant-img-preview');
+  const url = input.value.trim();
+  if (url){ preview.src = url; preview.style.display = 'block'; }
+  else { preview.style.display = 'none'; preview.src = ''; }
+}
+
+async function uploadVariantImage(e, row){
+  const file = e.target.files[0];
+  if (!file) return;
+  const wrap   = row.querySelector('.variant-img-wrap');
+  const status = row.querySelector('.variant-img-status');
+  const label  = wrap.querySelector('.variant-img-label');
+  const preview= row.querySelector('.variant-img-preview');
+  const urlInput = row.querySelector('[data-f="variantImage"]');
+
+  label.innerHTML = '⏳ جاري الرفع...';
+  status.textContent = '';
+
+  try {
+    const url = await uploadFile(file, 'variants');
+    urlInput.value = url;
+    preview.src = url;
+    preview.style.display = 'block';
+    label.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg> اختر صورة من الجهاز`;
+    status.textContent = '✓ تم الرفع بنجاح';
+    toast('✓ تم رفع صورة النوع', 'success');
+  } catch(err){
+    label.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg> اختر صورة من الجهاز`;
+    status.textContent = '✕ فشل الرفع: ' + (err.message||'خطأ');
+    toast('✕ فشل رفع الصورة', 'error');
+  }
+}
+
 function handleTagInput(e){
   if (e.key !== 'Enter') return;
   e.preventDefault();
@@ -1445,8 +1515,11 @@ function collectVariants(){
       image: tag.dataset.image || ''
     }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
+    const imgInput = row.querySelector('[data-f="variantImage"]');
+    const variantImage = imgInput ? imgInput.value.trim() : '';
     const v = { price, colors, sizes };
     if (type) v.type = type;
+    if (variantImage) v.image = variantImage;
     variants.push(v);
   });
   return variants;
