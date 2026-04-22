@@ -400,6 +400,121 @@
   }
   .phone-brand-tab.active{border-color:var(--gold-2);color:var(--gold-1);background:rgba(212,175,55,.1)}
 
+  /* ── كاردات الكفرات الـ 4 ── */
+  .covers-section{
+    padding:70px 24px 50px;
+  }
+  .covers-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+    max-width:1400px;
+    margin:0 auto;
+  }
+  .cover-brand-card{
+    background:linear-gradient(180deg,var(--bg-2) 0%,var(--bg-1) 100%);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    position:relative;
+    transition:all .35s cubic-bezier(.2,.8,.2,1);
+  }
+  .cover-brand-card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold-2),transparent);
+    opacity:0;transition:opacity .3s;
+  }
+  .cover-brand-card:hover{
+    transform:translateY(-4px);
+    border-color:var(--gold-3);
+    box-shadow:var(--shadow-gold);
+  }
+  .cover-brand-card:hover::before{opacity:1}
+
+  /* شريط الـ brand اللوجو أعلى الكارد */
+  .cover-brand-header{
+    padding:18px 16px 14px;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    border-bottom:1px solid var(--line);
+    background:rgba(212,175,55,.04);
+    flex-shrink:0;
+  }
+  .cover-brand-icon{
+    font-size:1.6rem;line-height:1;
+  }
+  .cover-brand-name{
+    font-family:var(--font-en);
+    font-size:1.05rem;font-weight:700;letter-spacing:2px;
+    background:linear-gradient(135deg,var(--gold-1),var(--gold-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+
+  /* صورة الكفر */
+  .cover-brand-img{
+    aspect-ratio:1;background:var(--bg-3);overflow:hidden;
+    position:relative;flex-shrink:0;
+  }
+  .cover-brand-img img{
+    width:100%;height:100%;object-fit:cover;
+    transition:transform .6s ease;
+  }
+  .cover-brand-card:hover .cover-brand-img img{transform:scale(1.07)}
+  .cover-brand-img.no-img{
+    display:grid;place-items:center;
+    color:var(--gold-3);opacity:.35;font-size:3rem;
+  }
+
+  /* body الكارد */
+  .cover-brand-body{
+    padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;
+  }
+  .cover-model-label{
+    font-size:.8rem;color:var(--text-dim);font-weight:600;margin-bottom:4px;display:block;
+  }
+  .cover-model-select{
+    width:100%;padding:9px 12px;
+    background:var(--bg-3);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius-sm);
+    font-family:var(--font-ar);font-size:.88rem;
+    cursor:pointer;outline:none;
+    transition:border-color .2s;
+  }
+  .cover-model-select:focus{border-color:var(--gold-3)}
+
+  .cover-price-tag{
+    display:flex;align-items:baseline;justify-content:center;gap:6px;
+    padding:9px;background:rgba(212,175,55,.06);border-radius:var(--radius-sm);
+    border:1px dashed var(--gold-3);
+  }
+  .cover-price-tag .num{font-size:1.35rem;font-weight:900;color:var(--gold-1);font-family:var(--font-en)}
+  .cover-price-tag .cur{color:var(--text-dim);font-size:.83rem}
+
+  .cover-add-btn{
+    padding:11px;border-radius:var(--radius-sm);border:none;
+    background:linear-gradient(135deg,var(--gold-1),var(--gold-2) 60%,var(--gold-3));
+    color:#000;font-weight:800;font-family:var(--font-ar);font-size:.93rem;
+    cursor:pointer;transition:all .2s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:auto;
+  }
+  .cover-add-btn:hover{letter-spacing:.5px;box-shadow:0 6px 20px -4px var(--gold-glow)}
+  .cover-add-btn:active{transform:scale(.98)}
+
+  @media(max-width:900px){
+    .covers-grid{grid-template-columns:repeat(2,1fr);gap:14px}
+  }
+  @media(max-width:480px){
+    .covers-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    .covers-section{padding:40px 10px 30px}
+    .cover-brand-header{padding:12px 10px 10px}
+    .cover-brand-name{font-size:.85rem;letter-spacing:1px}
+    .cover-brand-body{padding:11px;gap:9px}
+    .cover-model-select{font-size:.8rem;padding:7px 9px}
+    .cover-price-tag .num{font-size:1.1rem}
+    .cover-add-btn{font-size:.8rem;padding:9px}
+  }
+
   /* ───── زر عرض المزيد على الكارد ───── */
   .btn-more-desc{
     display:flex;align-items:center;justify-content:center;gap:6px;
@@ -1510,30 +1625,11 @@ function renderAll(){
   let html = '';
   categories.forEach(cat => {
     const isCover = isPhoneCaseCategory(cat.slug);
-    const items   = products.filter(p => p.category === cat.slug);
 
     if (isCover){
-      // عنوان رئيسي للكفرات
-      html += `
-        <div class="container" style="padding-top:70px;padding-bottom:10px">
-          <div class="section-head">
-            <h2 class="gold-text">كفرات موبايل</h2>
-            <div class="divider"><span class="diamond"></span></div>
-            ${cat.subtitle ? `<p>${cat.subtitle}</p>` : ''}
-          </div>
-        </div>`;
-      // sub-section لكل براند
-      COVER_BRANDS.forEach(brand => {
-        html += buildSection(
-          cat.slug + '-' + brand.toLowerCase(),
-          'كفرات ' + brand,
-          '',
-          items,
-          brand
-        );
-      });
+      html += buildCoverSection(cat);
     } else {
-      html += buildSection(cat.slug, cat.name, cat.subtitle, items, '');
+      html += buildSection(cat.slug, cat.name, cat.subtitle, products.filter(p => p.category === cat.slug), '');
     }
   });
 
@@ -2211,7 +2307,7 @@ const PHONE_MODELS = {
     'Samsung A03','Samsung A03s','Samsung A05s','Samsung A35 5G',
     'Samsung S8+','Samsung S9','Samsung S9+',
     'Samsung S10','Samsung S10 Lite',
-    'Note 10','Note 10 Lite',
+    'Samsung Note 10','Samsung Note 10 Lite',
     'Samsung S20','Samsung S20+','Samsung S20 Ultra',
     'Samsung S21+','Samsung S21 Ultra',
     'Samsung S22+','Samsung S22 Ultra',
@@ -2232,6 +2328,91 @@ const PHONE_MODELS = {
 // ─── Inject phone model selector into case-category cards ───
 function isPhoneCaseCategory(catSlug){
   return catSlug && (catSlug.includes('جراب') || catSlug.includes('case') || catSlug.includes('cover') || catSlug.includes('كفر'));
+}
+
+// ─── الأيقونات والصور لكل براند ───
+const BRAND_META = {
+  'iPhone':  { icon: '🍎', label: 'iPhone' },
+  'Samsung': { icon: '📱', label: 'Samsung' },
+  'Xiaomi':  { icon: '🔴', label: 'Xiaomi' },
+  'Oppo':    { icon: '⭕', label: 'Oppo' }
+};
+
+// ─── بناء section الكفرات بـ 4 كاردات ثابتة ───
+function buildCoverSection(cat){
+  // الصورة الأساسية من أول منتج في القسم (لو موجود)
+  const items = products.filter(p => p.category === cat.slug);
+  const coverImg = items.length && items[0].image_url ? items[0].image_url : '';
+
+  const cards = Object.keys(PHONE_MODELS).map(brand => {
+    const meta = BRAND_META[brand] || { icon:'📱', label: brand };
+    const models = PHONE_MODELS[brand];
+    const imgHtml = coverImg
+      ? `<img src="${coverImg}" alt="كفر ${brand}" loading="lazy">`
+      : `<div class="no-img">${meta.icon}</div>`;
+
+    return `
+      <div class="cover-brand-card" data-brand="${brand}">
+        <div class="cover-brand-header">
+          <span class="cover-brand-icon">${meta.icon}</span>
+          <span class="cover-brand-name">${meta.label}</span>
+        </div>
+        <div class="cover-brand-img ${coverImg?'':'no-img'}">
+          ${imgHtml}
+        </div>
+        <div class="cover-brand-body">
+          <div>
+            <span class="cover-model-label">اختر الموديل:</span>
+            <select class="cover-model-select">
+              ${models.map(m=>`<option value="${m}">${m}</option>`).join('')}
+            </select>
+          </div>
+          <div class="cover-price-tag">
+            <span class="num">40</span>
+            <span class="cur">شيقل</span>
+          </div>
+          <button class="cover-add-btn" onclick="addCoverToCart(this,'${brand}','${cat.slug}','${coverImg}')">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 3v2h2l3.6 7.6-1.4 2.4c-.2.3-.2.7 0 1 .2.3.5.5.9.5h12v-2H7.4l1-2h7c.8 0 1.4-.4 1.7-1l3.5-6.3c.2-.3.2-.7 0-1-.2-.3-.6-.5-1-.5H5.2l-1-2H1zm16 15c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            أضف للسلة
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <section class="covers-section" id="${cat.slug}">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="gold-text">${cat.name || 'كفرات موبايل'}</h2>
+          <div class="divider"><span class="diamond"></span></div>
+          ${cat.subtitle ? `<p>${cat.subtitle}</p>` : '<p style="color:var(--text-dim)">اختر الجهاز والموديل المناسب ليك</p>'}
+        </div>
+        <div class="covers-grid">${cards}</div>
+      </div>
+    </section>`;
+}
+
+// ─── إضافة كفر للسلة ───
+function addCoverToCart(btn, brand, catSlug, imgUrl){
+  const card = btn.closest('.cover-brand-card');
+  const modelSel = card.querySelector('.cover-model-select');
+  const model = modelSel ? modelSel.value : '';
+
+  // جيب اسم المنتج من أول منتج في القسم (لو موجود)
+  const catItems = products.filter(p => p.category === catSlug);
+  const productName = catItems.length ? catItems[0].name : 'كفر موبايل';
+
+  addToCart({
+    id: catSlug + '-' + brand,
+    name: `${productName} — ${brand}`,
+    image: imgUrl || '',
+    variantType: brand,
+    variantLabel: 'الجهاز',
+    size: model,
+    color: '',
+    price: 40,
+    qty: 1
+  });
 }
 
 function buildPhoneModelSelector(cardEl, fixedBrand){
