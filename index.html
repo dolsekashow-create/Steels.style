@@ -363,6 +363,27 @@
     margin-top:4px;min-height:16px;text-align:right;
     transition:opacity .2s;
   }
+  /* ── Material badge (card + modal) ── */
+  .material-badge{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(212,175,55,.08);border:1px solid var(--gold-3);
+    color:var(--gold-2);padding:3px 9px;border-radius:12px;
+    font-size:.72rem;font-weight:700;width:fit-content;
+  }
+  .material-badge::before{
+    content:'';width:6px;height:6px;border-radius:50%;
+    background:var(--gold-2);flex-shrink:0;
+  }
+  .pm-material{
+    display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.85rem;
+  }
+  .pm-material-label{color:var(--text-dim);font-weight:600}
+  .pm-material-value{
+    color:var(--gold-1);font-weight:700;
+    background:rgba(212,175,55,.08);
+    padding:3px 10px;border-radius:6px;
+    border:1px solid var(--gold-3);
+  }
   .price-tag{
     display:flex;align-items:baseline;justify-content:center;gap:6px;
     padding:10px;background:rgba(212,175,55,.06);border-radius:var(--radius-sm);
@@ -1359,7 +1380,8 @@ const COLOR_MAP = {
 const colorHex = c => {
   if (!c) return '#888';
   if (typeof c === 'object') return c.hex || COLOR_MAP[c.name] || '#888';
-  return COLOR_MAP[c] || c.startsWith('#') ? c : '#888';
+  if (typeof c === 'string' && c.startsWith('#')) return c;
+  return COLOR_MAP[c] || '#888';
 };
 
 // ─── Utility: toast ───
@@ -1666,67 +1688,110 @@ window.addEventListener('scroll', ()=>{
   else btn.classList.remove('visible');
 });
 
+// ─── تطبيع الـ variants للتعامل مع البنية القديمة والجديدة ───
+// الشكل الجديد: [{name, hex, price, sizes:[], image}]   ← كل عنصر = لون
+// الشكل القديم: [{type, price, colors:[{name,hex,image}|str], sizes:[], image}]
+function normalizeProductVariants(variants){
+  if (!Array.isArray(variants) || !variants.length) return [];
+  const result = [];
+  variants.forEach(v => {
+    if (!v) return;
+    // الشكل الجديد
+    if ((v.name || v.hex) && !Array.isArray(v.colors)){
+      result.push({
+        name:  v.name  || '',
+        hex:   v.hex   || colorHex(v.name || ''),
+        price: Number(v.price) || 0,
+        sizes: Array.isArray(v.sizes) ? v.sizes.slice() : [],
+        image: v.image || ''
+      });
+      return;
+    }
+    // الشكل القديم
+    const price = Number(v.price) || 0;
+    const sizes = Array.isArray(v.sizes) ? v.sizes.slice() : [];
+    const fallbackImg = v.image || '';
+    const colors = Array.isArray(v.colors) ? v.colors : [];
+    if (!colors.length){
+      result.push({
+        name:  v.type || 'افتراضي',
+        hex:   '#888888',
+        price, sizes, image: fallbackImg
+      });
+      return;
+    }
+    colors.forEach(c => {
+      const cname = typeof c === 'object' ? (c.name || '') : String(c || '');
+      const chex  = typeof c === 'object'
+        ? (c.hex || colorHex(cname))
+        : colorHex(cname);
+      const cimg  = typeof c === 'object' ? (c.image || fallbackImg) : fallbackImg;
+      result.push({
+        name:  cname,
+        hex:   chex,
+        price, sizes: sizes.slice(), image: cimg
+      });
+    });
+  });
+  return result;
+}
+
 // ─── Render single card ───
 function renderCard(p){
-  const variants = p.variants || [];
-  const firstVariant = variants[0] || {price:0, colors:[], sizes:[]};
-  const showVariantSelector = variants.length > 1;
-  const variantLabel = p.variant_label || 'الخامة';
+  const variants = normalizeProductVariants(p.variants || []);
+  const hasVariants = variants.length > 0;
+  const firstVariant = variants[0] || {name:'', hex:'#888', price:0, sizes:[], image:''};
+  const hasColors = hasVariants && variants.some(v => v.name);
 
-  // Build color→image map from all variants
-  // Each color entry can be object {name,image} or plain string
+  // Build color→image map (لتغيير صورة الكارد عند اختيار لون)
   const colorImgMap = {};
   variants.forEach(v => {
-    (v.colors || []).forEach(c => {
-      const name = typeof c === 'object' ? c.name : c;
-      const img  = typeof c === 'object' ? (c.image || p.image_url || '') : p.image_url || '';
-      if (name && !colorImgMap[name]) colorImgMap[name] = img;
-    });
+    if (v.name && !colorImgMap[v.name]){
+      colorImgMap[v.name] = v.image || p.image_url || '';
+    }
   });
   const colorImgData = encodeURIComponent(JSON.stringify(colorImgMap));
 
-  const variantSelector = showVariantSelector ? `
-    <div>
-      <label class="field-label">اختر ${variantLabel}:</label>
-      <select data-role="variant">
-        ${variants.map((v,i)=>`<option value="${i}">${v.type || 'النوع ' + (i+1)}</option>`).join('')}
-      </select>
-    </div>` : '';
+  // صورة البداية = صورة اللون الأول لو موجودة، وإلا صورة المنتج الرئيسية
+  const initialImg = firstVariant.image || p.image_url || '';
 
   return `
     <div class="product-card" data-id="${p.id}" data-color-imgs="${colorImgData}">
-      <div class="product-image ${p.image_url ? '' : 'placeholder'}" 
+      <div class="product-image ${initialImg ? '' : 'placeholder'}"
            style="cursor:zoom-in" onclick="openProductModal('${p.id}')">
-        ${p.image_url 
-          ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.parentElement.innerHTML='<svg width=60 height=60 viewBox=\\'0 0 24 24\\' fill=currentColor><path d=\\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3L14.5 12l4.5 6H5l3.5-4.5z\\'/></svg>';this.parentElement.classList.add('placeholder')">`
+        ${initialImg
+          ? `<img src="${initialImg}" alt="${p.name}" loading="lazy" onerror="this.parentElement.innerHTML='<svg width=60 height=60 viewBox=\\'0 0 24 24\\' fill=currentColor><path d=\\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3L14.5 12l4.5 6H5l3.5-4.5z\\'/></svg>';this.parentElement.classList.add('placeholder')">`
           : `<svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`}
       </div>
       <div class="product-body">
         <div class="product-name">${p.name}</div>
+        ${p.material ? `<span class="material-badge">${p.material}</span>` : ''}
         ${p.description ? `
         <button class="btn-more-desc" onclick="openDescModal(event,'${p.id}')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
           عرض المزيد
         </button>` : ''}
-        ${variantSelector}
+
+        <div data-role="color-wrap" style="${hasColors?'':'display:none'}">
+          <label class="field-label">اللون:</label>
+          <div class="color-swatches" data-role="colors">
+            ${variants.map((v,i)=>{
+              if (!v.name) return '';
+              return `<span class="color-swatch ${i===0?'active':''}"
+                    data-vidx="${i}" data-color="${v.name}" data-label="${v.name}"
+                    style="background:${v.hex || colorHex(v.name)}"></span>`;
+            }).join('')}
+          </div>
+          <div class="color-name-label" data-role="color-name">${firstVariant.name || ''}</div>
+        </div>
+
         <div data-role="size-wrap" style="${(firstVariant.sizes||[]).length?'':'display:none'}">
           <label class="field-label">المقاس:</label>
           <select data-role="size">
             ${(firstVariant.sizes||[]).map(s=>`<option value="${s}">${s}</option>`).join('')}
           </select>
         </div>
-        <div data-role="color-wrap" style="${(firstVariant.colors||[]).length?'':'display:none'}">
-          <label class="field-label">اللون:</label>
-          <div class="color-swatches" data-role="colors">
-            ${(firstVariant.colors||[]).map((c,i)=>{
-              const name = typeof c==='object' ? c.name : c;
-              return `<span class="color-swatch ${i===0?'active':''}" 
-                    data-color="${name}" data-label="${name}"
-                    style="background:${colorHex(name)}"></span>`;
-            }).join('')}
-          </div>
-          <div class="color-name-label" data-role="color-name">${(()=>{const c=firstVariant.colors&&firstVariant.colors[0];return c?(typeof c==='object'?c.name:c):''})()}</div>
-        </div>
+
         <div class="price-tag">
           <span class="num" data-role="price">${firstVariant.price||0}</span>
           <span class="cur">شيقل</span>
@@ -1744,63 +1809,68 @@ function renderCard(p){
 function attachCardHandlers(card){
   const product = productsMap.get(card.dataset.id);
   if (!product) return;
-  const variantSelect = card.querySelector('[data-role="variant"]');
+  const variants = normalizeProductVariants(product.variants || []);
+
   const sizeSelect = card.querySelector('[data-role="size"]');
-  const sizeWrap = card.querySelector('[data-role="size-wrap"]');
-  const colorsWrap = card.querySelector('[data-role="color-wrap"]');
-  const colorsBox = card.querySelector('[data-role="colors"]');
-  const priceEl = card.querySelector('[data-role="price"]');
-  const addBtn = card.querySelector('[data-role="add"]');
+  const sizeWrap   = card.querySelector('[data-role="size-wrap"]');
+  const colorsBox  = card.querySelector('[data-role="colors"]');
+  const colorNameLabel = card.querySelector('[data-role="color-name"]');
+  const priceEl    = card.querySelector('[data-role="price"]');
+  const addBtn     = card.querySelector('[data-role="add"]');
+  const imgEl      = card.querySelector('.product-image img');
 
-  const refreshVariant = () => {
-    const vIdx = variantSelect ? parseInt(variantSelect.value) : 0;
-    const v = product.variants[vIdx] || {};
-    priceEl.textContent = v.price || 0;
-
-    // sizes
+  // تحديث الـ UI بناءً على اللون المختار
+  const applyVariant = (vIdx) => {
+    const v = variants[vIdx] || variants[0] || {};
+    // السعر
+    if (priceEl) priceEl.textContent = v.price || 0;
+    // المقاسات
     if (sizeSelect) {
       const sizes = v.sizes || [];
       sizeSelect.innerHTML = sizes.map(s=>`<option value="${s}">${s}</option>`).join('');
-      sizeWrap.style.display = sizes.length ? '' : 'none';
+      if (sizeWrap) sizeWrap.style.display = sizes.length ? '' : 'none';
     }
-    // colors
-    if (colorsBox) {
-      const colors = v.colors || [];
-      colorsBox.innerHTML = colors.map((c,i)=>{
-        const name = typeof c === 'object' ? c.name : c;
-        return `<span class="color-swatch ${i===0?'active':''}"
-              data-color="${name}" data-label="${name}"
-              style="background:${colorHex(name)}"></span>`;
-      }).join('');
-      colorsWrap.style.display = colors.length ? '' : 'none';
-      // تحديث label اللون الأول
-      const colorNameLabel = card.querySelector('[data-role="color-name"]');
-      if (colorNameLabel){
-        const firstColor = colors[0];
-        colorNameLabel.textContent = firstColor ? (typeof firstColor==='object' ? firstColor.name : firstColor) : '';
-      }
-      const colorImgMap = {};
-      (product.variants||[]).forEach(vv => {
-        (vv.colors||[]).forEach(c => {
-          const n = typeof c==='object' ? c.name : c;
-          const img = typeof c==='object' ? (c.image||product.image_url||'') : product.image_url||'';
-          if (n && !colorImgMap[n]) colorImgMap[n] = img;
-        });
-      });
-      card.dataset.colorImgs = encodeURIComponent(JSON.stringify(colorImgMap));
-      attachColorSwatches(colorsBox, card);
+    // اسم اللون
+    if (colorNameLabel) colorNameLabel.textContent = v.name || '';
+    // صورة الكارد
+    const newSrc = v.image || product.image_url || '';
+    if (imgEl && newSrc && imgEl.src !== newSrc){
+      imgEl.classList.add('img-fade');
+      setTimeout(()=>{ imgEl.src = newSrc; imgEl.classList.remove('img-fade'); }, 200);
     }
   };
 
-  if (variantSelect) variantSelect.addEventListener('change', refreshVariant);
-  attachColorSwatches(colorsBox, card);
+  // اضغط على swatch → فعّل الـ variant المناسب
+  if (colorsBox){
+    colorsBox.querySelectorAll('.color-swatch').forEach(sw => {
+      sw.addEventListener('click', (e) => {
+        e.stopPropagation();
+        colorsBox.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
+        sw.classList.add('active');
+        const vIdx = parseInt(sw.dataset.vidx || '0');
+        applyVariant(vIdx);
+      });
+    });
+  }
 
+  // زر "أضف للسلة"
   addBtn.addEventListener('click', () => {
-    const vIdx = variantSelect ? parseInt(variantSelect.value) : 0;
-    const v = product.variants[vIdx] || {};
+    const activeSwatch = colorsBox ? colorsBox.querySelector('.color-swatch.active') : null;
+    const vIdx = activeSwatch ? parseInt(activeSwatch.dataset.vidx || '0') : 0;
+    const v = variants[vIdx] || variants[0] || {};
+
+    // لو في ألوان متاحة لازم العميل يكون مختار لون
+    if (variants.some(vv=>vv.name) && !v.name){
+      toast('اختر اللون أولاً', 'error');
+      return;
+    }
+    // لو في مقاسات متاحة لازم مقاس يكون متحدد
     const size = sizeSelect && sizeSelect.value ? sizeSelect.value : '';
-    const colorEl = colorsBox ? colorsBox.querySelector('.color-swatch.active') : null;
-    const color = colorEl ? colorEl.dataset.color : '';
+    if ((v.sizes||[]).length && !size){
+      toast('اختر المقاس أولاً', 'error');
+      return;
+    }
+
     const phoneModelEl = card.querySelector('.phone-model-select');
     const phoneModel = phoneModelEl ? phoneModelEl.value : '';
     const isCase = !!phoneModelEl;
@@ -1808,11 +1878,11 @@ function attachCardHandlers(card){
     addToCart({
       id: product.id,
       name: product.name,
-      image: product.image_url || '',
-      variantType: v.type || '',
-      variantLabel: product.variant_label || 'الخامة',
+      image: v.image || product.image_url || '',
+      variantType: '',
+      variantLabel: '',
       size: phoneModel || size,
-      color: color,
+      color: v.name || '',
       price: isCase ? 40 : (v.price || 0),
       qty: 1
     });
@@ -1894,21 +1964,34 @@ function openProductModal(id){
   if (!pmProduct) return;
 
   const p = pmProduct;
-  const variants = p.variants || [];
-  const firstVariant = variants[0] || {price:0, colors:[], sizes:[]};
+  const variants = normalizeProductVariants(p.variants || []);
+  // احفظ الـ variants المطبَّعة على الكائن عشان نستخدمها في pmAddToCart
+  p._normVariants = variants;
+  const firstVariant = variants[0] || {name:'', hex:'#888', price:0, sizes:[], image:''};
 
-  // Name & desc
+  // الاسم والوصف
   document.getElementById('pmName').textContent = p.name;
   const descEl = document.getElementById('pmDesc');
   if (p.description){ descEl.textContent = p.description; descEl.style.display = ''; }
   else descEl.style.display = 'none';
 
-  // Main image
+  // الخامة
+  const materialWrap = document.getElementById('pmMaterialWrap');
+  const materialEl   = document.getElementById('pmMaterial');
+  if (p.material && materialWrap && materialEl){
+    materialEl.textContent = p.material;
+    materialWrap.style.display = '';
+  } else if (materialWrap){
+    materialWrap.style.display = 'none';
+  }
+
+  // الصورة الرئيسية (ستتحدث مع تغيير اللون)
   const imgSide = document.getElementById('pmImgSide');
   const imgEl   = document.getElementById('pmImg');
-  if (p.image_url){
+  const initialImg = firstVariant.image || p.image_url || '';
+  if (initialImg){
     imgSide.classList.remove('placeholder');
-    imgEl.src = p.image_url;
+    imgEl.src = initialImg;
     imgEl.alt = p.name;
     imgEl.style.display = '';
   } else {
@@ -1916,111 +1999,111 @@ function openProductModal(id){
     imgEl.style.display = 'none';
   }
 
-  // Variant selector
-  const varWrap = document.getElementById('pmVariantWrap');
-  const varSel  = document.querySelector('[data-role="pm-variant"]');
-  if (variants.length > 1){
-    const lbl = p.variant_label || 'الخامة';
-    document.getElementById('pmVariantLabel').textContent = `اختر ${lbl}:`;
-    varSel.innerHTML = variants.map((v,i)=>`<option value="${i}">${v.type||'النوع '+(i+1)}</option>`).join('');
-    varWrap.style.display = '';
-  } else {
-    varWrap.style.display = 'none';
-  }
+  // رسم الألوان + أول variant
+  pmRenderColorsAndApply(variants, 0, p);
 
-  // Render first variant controls
-  pmRenderVariantControls(firstVariant, p);
-
-  // Open
+  // افتح
   document.getElementById('productModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
-function pmRenderVariantControls(v, p){
-  const colorImgMap = {};
-  (p.variants||[]).forEach(vv => {
-    (vv.colors||[]).forEach(c => {
-      const name = typeof c==='object' ? c.name : c;
-      const img  = typeof c==='object' ? (c.image||p.image_url||'') : p.image_url||'';
-      if (name && !colorImgMap[name]) colorImgMap[name] = img;
-    });
-  });
-
-  // Sizes
-  const sizeWrap = document.getElementById('pmSizeWrap');
-  const sizeSel  = document.querySelector('[data-role="pm-size"]');
-  const sizes = v.sizes || [];
-  if (sizes.length){
-    sizeSel.innerHTML = sizes.map(s=>`<option value="${s}">${s}</option>`).join('');
-    sizeWrap.style.display = '';
-  } else { sizeWrap.style.display = 'none'; }
-
-  // Colors
+// ─── رسم الـ swatches وتطبيق الـ variant المختار ───
+function pmRenderColorsAndApply(variants, activeIdx, p){
   const colorWrap = document.getElementById('pmColorWrap');
   const colorsBox = document.getElementById('pmColors');
-  const colors = v.colors || [];
-  if (colors.length){
-    colorsBox.innerHTML = colors.map((c,i)=>{
-      const name = typeof c==='object' ? c.name : c;
-      return `<span class="color-swatch ${i===0?'active':''}"
-              data-color="${name}" data-label="${name}"
-              style="background:${colorHex(name)}"></span>`;
+  const hasColors = variants.length && variants.some(v => v.name);
+
+  if (hasColors){
+    colorsBox.innerHTML = variants.map((v,i)=>{
+      if (!v.name) return '';
+      return `<span class="color-swatch ${i===activeIdx?'active':''}"
+              data-vidx="${i}" data-color="${v.name}" data-label="${v.name}"
+              style="background:${v.hex || colorHex(v.name)}"></span>`;
     }).join('');
     colorWrap.style.display = '';
 
-    // Attach color→image for modal
+    // ربط الـ click لكل swatch
     colorsBox.querySelectorAll('.color-swatch').forEach(sw => {
       sw.addEventListener('click', () => {
         colorsBox.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
         sw.classList.add('active');
-        // تحديث اسم اللون
-        const lbl = document.getElementById('pmColorName');
-        if (lbl) lbl.textContent = sw.dataset.color || '';
-        const newSrc = colorImgMap[sw.dataset.color];
-        if (newSrc){
-          const imgEl = document.getElementById('pmImg');
-          imgEl.classList.add('img-fade');
-          setTimeout(()=>{ imgEl.src = newSrc; imgEl.classList.remove('img-fade'); }, 220);
-        }
+        const vIdx = parseInt(sw.dataset.vidx || '0');
+        pmApplyVariant(variants[vIdx] || {}, p);
       });
     });
+  } else {
+    colorWrap.style.display = 'none';
+  }
 
-    // Set image to first color's image
-    const firstColorName = typeof colors[0]==='object' ? colors[0].name : colors[0];
-    const firstImg = colorImgMap[firstColorName];
-    if (firstImg){ document.getElementById('pmImg').src = firstImg; }
-    // تحديث اسم اللون الأول
-    const pmColorNameEl = document.getElementById('pmColorName');
-    if (pmColorNameEl) pmColorNameEl.textContent = firstColorName || '';
-  } else { colorWrap.style.display = 'none'; }
-
-  // Price
-  document.getElementById('pmPrice').textContent = v.price || 0;
+  // طبّق الـ variant النشط
+  pmApplyVariant(variants[activeIdx] || {}, p);
 }
 
+// ─── تطبيق variant محدد على الـ modal (السعر، المقاسات، الصورة، اسم اللون) ───
+function pmApplyVariant(v, p){
+  // السعر
+  document.getElementById('pmPrice').textContent = v.price || 0;
+
+  // اسم اللون
+  const nameEl = document.getElementById('pmColorName');
+  if (nameEl) nameEl.textContent = v.name || '';
+
+  // المقاسات (خاصة باللون الحالي فقط)
+  const sizeWrap = document.getElementById('pmSizeWrap');
+  const sizeSel  = document.querySelector('[data-role="pm-size"]');
+  const sizes = v.sizes || [];
+  if (sizeSel){
+    sizeSel.innerHTML = sizes.map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
+  if (sizeWrap) sizeWrap.style.display = sizes.length ? '' : 'none';
+
+  // الصورة الرئيسية
+  const imgEl = document.getElementById('pmImg');
+  const newSrc = v.image || (p && p.image_url) || '';
+  if (imgEl && newSrc && imgEl.src !== newSrc){
+    imgEl.classList.add('img-fade');
+    setTimeout(()=>{ imgEl.src = newSrc; imgEl.classList.remove('img-fade'); }, 220);
+  }
+}
+
+// ─── backward-compat stub لو في كود قديم بينادي pmRefreshVariant ───
 function pmRefreshVariant(){
   if (!pmProduct) return;
-  const varSel = document.querySelector('[data-role="pm-variant"]');
-  const vIdx = varSel ? parseInt(varSel.value) : 0;
-  const v = (pmProduct.variants||[])[vIdx] || {};
-  pmRenderVariantControls(v, pmProduct);
+  const variants = pmProduct._normVariants || normalizeProductVariants(pmProduct.variants || []);
+  const active = document.querySelector('#pmColors .color-swatch.active');
+  const idx = active ? parseInt(active.dataset.vidx || '0') : 0;
+  pmApplyVariant(variants[idx] || {}, pmProduct);
 }
 
 function pmAddToCart(){
   if (!pmProduct) return;
-  const varSel   = document.querySelector('[data-role="pm-variant"]');
-  const sizeSel  = document.querySelector('[data-role="pm-size"]');
-  const colorEl  = document.querySelector('#pmColors .color-swatch.active');
-  const vIdx = varSel ? parseInt(varSel.value) : 0;
-  const v = (pmProduct.variants||[])[vIdx] || {};
+  const p = pmProduct;
+  const variants = p._normVariants || normalizeProductVariants(p.variants || []);
+  const sizeSel = document.querySelector('[data-role="pm-size"]');
+  const activeSwatch = document.querySelector('#pmColors .color-swatch.active');
+  const vIdx = activeSwatch ? parseInt(activeSwatch.dataset.vidx || '0') : 0;
+  const v = variants[vIdx] || {};
+
+  // تحقق: لازم لون مختار لو في ألوان
+  if (variants.some(vv=>vv.name) && !v.name){
+    toast('اختر اللون أولاً', 'error');
+    return;
+  }
+  // تحقق: لازم مقاس مختار لو في مقاسات
+  const size = sizeSel && sizeSel.value ? sizeSel.value : '';
+  if ((v.sizes||[]).length && !size){
+    toast('اختر المقاس أولاً', 'error');
+    return;
+  }
+
   addToCart({
-    id: pmProduct.id,
-    name: pmProduct.name,
-    image: document.getElementById('pmImg').src || pmProduct.image_url || '',
-    variantType: v.type || '',
-    variantLabel: pmProduct.variant_label || 'الخامة',
-    size: sizeSel && sizeSel.value ? sizeSel.value : '',
-    color: colorEl ? colorEl.dataset.color : '',
+    id: p.id,
+    name: p.name,
+    image: v.image || document.getElementById('pmImg').src || p.image_url || '',
+    variantType: '',
+    variantLabel: '',
+    size: size,
+    color: v.name || '',
     price: v.price || 0,
     qty: 1
   });
@@ -2567,23 +2650,23 @@ updateCartBadge();
       <div class="pm-name" id="pmName"></div>
       <div class="pm-desc" id="pmDesc" style="display:none"></div>
 
-      <!-- اختيار النوع/الخامة -->
-      <div id="pmVariantWrap" style="display:none">
-        <label class="field-label" id="pmVariantLabel">اختر الخامة:</label>
-        <select data-role="pm-variant" onchange="pmRefreshVariant()"></select>
+      <!-- الخامة -->
+      <div id="pmMaterialWrap" class="pm-material" style="display:none">
+        <span class="pm-material-label">الخامة:</span>
+        <span class="pm-material-value" id="pmMaterial"></span>
+      </div>
+
+      <!-- الألوان (كل لون له سعره ومقاساته) -->
+      <div id="pmColorWrap" style="display:none">
+        <label class="field-label">اللون:</label>
+        <div class="color-swatches" id="pmColors"></div>
+        <div class="color-name-label" id="pmColorName"></div>
       </div>
 
       <!-- المقاس -->
       <div id="pmSizeWrap" style="display:none">
         <label class="field-label">المقاس:</label>
         <select data-role="pm-size"></select>
-      </div>
-
-      <!-- الألوان -->
-      <div id="pmColorWrap" style="display:none">
-        <label class="field-label">اللون:</label>
-        <div class="color-swatches" id="pmColors"></div>
-        <div class="color-name-label" id="pmColorName"></div>
       </div>
 
       <!-- السعر -->
