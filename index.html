@@ -1752,8 +1752,8 @@ function renderCard(p){
   });
   const colorImgData = encodeURIComponent(JSON.stringify(colorImgMap));
 
-  // صورة البداية = صورة اللون الأول لو موجودة، وإلا صورة المنتج الرئيسية
-  const initialImg = firstVariant.image || p.image_url || '';
+  // صورة البداية = صورة المنتج الرئيسية (وتتغيّر لما العميل يختار لون عنده صورة)
+  const initialImg = p.image_url || firstVariant.image || '';
 
   return `
     <div class="product-card" data-id="${p.id}" data-color-imgs="${colorImgData}">
@@ -1985,10 +1985,10 @@ function openProductModal(id){
     materialWrap.style.display = 'none';
   }
 
-  // الصورة الرئيسية (ستتحدث مع تغيير اللون)
+  // الصورة الرئيسية (ستتحدث مع تغيير اللون لو اللون عنده صورة)
   const imgSide = document.getElementById('pmImgSide');
   const imgEl   = document.getElementById('pmImg');
-  const initialImg = firstVariant.image || p.image_url || '';
+  const initialImg = p.image_url || firstVariant.image || '';
   if (initialImg){
     imgSide.classList.remove('placeholder');
     imgEl.src = initialImg;
@@ -2022,25 +2022,26 @@ function pmRenderColorsAndApply(variants, activeIdx, p){
     }).join('');
     colorWrap.style.display = '';
 
-    // ربط الـ click لكل swatch
+    // ربط الـ click لكل swatch — ده اللي بيغيّر الصورة بقى
     colorsBox.querySelectorAll('.color-swatch').forEach(sw => {
       sw.addEventListener('click', () => {
         colorsBox.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
         sw.classList.add('active');
         const vIdx = parseInt(sw.dataset.vidx || '0');
-        pmApplyVariant(variants[vIdx] || {}, p);
+        pmApplyVariant(variants[vIdx] || {}, p, true);  // true = غيّر الصورة
       });
     });
   } else {
     colorWrap.style.display = 'none';
   }
 
-  // طبّق الـ variant النشط
-  pmApplyVariant(variants[activeIdx] || {}, p);
+  // طبّق الـ variant النشط (السعر والمقاسات واسم اللون) — بدون تغيير الصورة
+  // علشان الصورة الرئيسية تفضل ظاهرة في البداية
+  pmApplyVariant(variants[activeIdx] || {}, p, false);
 }
 
-// ─── تطبيق variant محدد على الـ modal (السعر، المقاسات، الصورة، اسم اللون) ───
-function pmApplyVariant(v, p){
+// ─── تطبيق variant محدد على الـ modal (السعر، المقاسات، اسم اللون، واختياري الصورة) ───
+function pmApplyVariant(v, p, changeImage){
   // السعر
   document.getElementById('pmPrice').textContent = v.price || 0;
 
@@ -2057,12 +2058,14 @@ function pmApplyVariant(v, p){
   }
   if (sizeWrap) sizeWrap.style.display = sizes.length ? '' : 'none';
 
-  // الصورة الرئيسية
-  const imgEl = document.getElementById('pmImg');
-  const newSrc = v.image || (p && p.image_url) || '';
-  if (imgEl && newSrc && imgEl.src !== newSrc){
-    imgEl.classList.add('img-fade');
-    setTimeout(()=>{ imgEl.src = newSrc; imgEl.classList.remove('img-fade'); }, 220);
+  // الصورة الرئيسية — تتغير بس لما اللون عنده صورة مخصصة والعميل ضغط عليه
+  if (changeImage){
+    const imgEl = document.getElementById('pmImg');
+    const newSrc = v.image || (p && p.image_url) || '';
+    if (imgEl && newSrc && imgEl.src !== newSrc){
+      imgEl.classList.add('img-fade');
+      setTimeout(()=>{ imgEl.src = newSrc; imgEl.classList.remove('img-fade'); }, 220);
+    }
   }
 }
 
