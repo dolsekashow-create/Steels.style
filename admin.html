@@ -1161,8 +1161,41 @@ function addVariant(data = {}){
         <input type="text" placeholder="اضغط Enter لإضافة مقاس" onkeydown="addTag(event)">
       </div>
     </div>
+    <div class="form-group">
+      <label>📸 صورة النوع / الخامة (اختياري)</label>
+      <div class="img-upload-wrap variant-img-wrap" style="cursor:pointer">
+        <input type="file" accept="image/*" class="variant-img-file" style="display:none">
+        <div style="color:var(--gold-2);font-size:.9rem">📤 اضغط هنا لرفع صورة للنوع / الخامة</div>
+        <div class="upload-status variant-img-status" style="min-height:18px"></div>
+        <img class="img-preview variant-img-preview" style="display:${data.image?'block':'none'};max-width:140px;max-height:140px;margin:8px auto;border-radius:6px;border:1px solid var(--line)" ${data.image?`src="${data.image}"`:''}> 
+      </div>
+      <input type="text" data-f="variant_image" value="${data.image||''}" placeholder="أو ألصق رابط الصورة مباشرة" style="margin-top:8px">
+    </div>
   `;
   list.appendChild(row);
+
+  // ─── رفع صورة الـ variant ───
+  const varImgWrap = row.querySelector('.variant-img-wrap');
+  const varImgFile = row.querySelector('.variant-img-file');
+  varImgWrap.addEventListener('click', () => varImgFile.click());
+  varImgFile.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = row.querySelector('.variant-img-status');
+    const previewEl = row.querySelector('.variant-img-preview');
+    const urlInput  = row.querySelector('[data-f="variant_image"]');
+    statusEl.textContent = '⏳ جاري الرفع...';
+    try {
+      const url = await uploadFile(file, 'products');
+      urlInput.value = url;
+      previewEl.src = url;
+      previewEl.style.display = 'block';
+      statusEl.textContent = '✓ تم الرفع بنجاح';
+    } catch(err){
+      console.error(err);
+      statusEl.textContent = '✕ فشل الرفع: ' + (err.message || 'خطأ');
+    }
+  });
 
   // تهيئة الـ picker في الـ row الجديد
   initPickerInRow(row);
@@ -1445,8 +1478,11 @@ function collectVariants(){
       image: tag.dataset.image || ''
     }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
+    const varImgInput = row.querySelector('[data-f="variant_image"]');
+    const varImage = varImgInput ? varImgInput.value.trim() : '';
     const v = { price, colors, sizes };
     if (type) v.type = type;
+    if (varImage) v.image = varImage;
     variants.push(v);
   });
   return variants;
@@ -1550,10 +1586,10 @@ let coverImages = {}; // key → url
 
 async function loadCoverImages(){
   const { data, error } = await sb.from('cover_images').select('*');
-  if (error){ console.error('cover_images:', error.message); }
+  if (error){ console.error(error); return; }
   coverImages = {};
   (data||[]).forEach(row => { coverImages[row.brand_key] = row.image_url; });
-  renderCoverCards(); // دايمًا ارسم الكروت حتى لو فيه error
+  renderCoverCards();
 }
 
 function renderCoverCards(){
