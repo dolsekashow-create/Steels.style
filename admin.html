@@ -1550,10 +1550,10 @@ let coverImages = {}; // key → url
 
 async function loadCoverImages(){
   const { data, error } = await sb.from('cover_images').select('*');
-  if (error){ console.error(error); return; }
+  if (error){ console.error('cover_images:', error.message); }
   coverImages = {};
   (data||[]).forEach(row => { coverImages[row.brand_key] = row.image_url; });
-  renderCoverCards();
+  renderCoverCards(); // دايمًا ارسم الكروت حتى لو فيه error
 }
 
 function renderCoverCards(){
