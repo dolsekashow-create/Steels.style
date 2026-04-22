@@ -852,7 +852,7 @@
 <script>
 // ─── Supabase ───
 const SUPABASE_URL = 'https://mffpfxglevnwzyanbexr.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_-QsEFXUROKnimHHecEzymQ_EKaReHeU';
+const SUPABASE_KEY = 'sb_publishable_lPa98YbCXdXpGJxitr7nNQ_EC0q_71g';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_PW = 'nimda321';
@@ -1161,41 +1161,8 @@ function addVariant(data = {}){
         <input type="text" placeholder="اضغط Enter لإضافة مقاس" onkeydown="addTag(event)">
       </div>
     </div>
-    <div class="form-group">
-      <label>📸 صورة النوع / الخامة (اختياري)</label>
-      <div class="img-upload-wrap variant-img-wrap" style="cursor:pointer">
-        <input type="file" accept="image/*" class="variant-img-file" style="display:none">
-        <div style="color:var(--gold-2);font-size:.9rem">📤 اضغط هنا لرفع صورة للنوع / الخامة</div>
-        <div class="upload-status variant-img-status" style="min-height:18px"></div>
-        <img class="img-preview variant-img-preview" style="display:${data.image?'block':'none'};max-width:140px;max-height:140px;margin:8px auto;border-radius:6px;border:1px solid var(--line)" ${data.image?`src="${data.image}"`:''}> 
-      </div>
-      <input type="text" data-f="variant_image" value="${data.image||''}" placeholder="أو ألصق رابط الصورة مباشرة" style="margin-top:8px">
-    </div>
   `;
   list.appendChild(row);
-
-  // ─── رفع صورة الـ variant ───
-  const varImgWrap = row.querySelector('.variant-img-wrap');
-  const varImgFile = row.querySelector('.variant-img-file');
-  varImgWrap.addEventListener('click', () => varImgFile.click());
-  varImgFile.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const statusEl = row.querySelector('.variant-img-status');
-    const previewEl = row.querySelector('.variant-img-preview');
-    const urlInput  = row.querySelector('[data-f="variant_image"]');
-    statusEl.textContent = '⏳ جاري الرفع...';
-    try {
-      const url = await uploadFile(file, 'products');
-      urlInput.value = url;
-      previewEl.src = url;
-      previewEl.style.display = 'block';
-      statusEl.textContent = '✓ تم الرفع بنجاح';
-    } catch(err){
-      console.error(err);
-      statusEl.textContent = '✕ فشل الرفع: ' + (err.message || 'خطأ');
-    }
-  });
 
   // تهيئة الـ picker في الـ row الجديد
   initPickerInRow(row);
@@ -1478,11 +1445,8 @@ function collectVariants(){
       image: tag.dataset.image || ''
     }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
-    const varImgInput = row.querySelector('[data-f="variant_image"]');
-    const varImage = varImgInput ? varImgInput.value.trim() : '';
     const v = { price, colors, sizes };
     if (type) v.type = type;
-    if (varImage) v.image = varImage;
     variants.push(v);
   });
   return variants;
@@ -1495,21 +1459,6 @@ async function saveProduct(){
   const variants = collectVariants();
   if (!variants.length){ toast('أضف نوع واحد على الأقل', 'error'); return; }
 
-  // توليد slug من الاسم (حروف عربية + إنجليزية + أرقام)
-  function generateSlug(str){
-    return str
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9\u0600-\u06ff-]/g, '')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      || 'product-' + Date.now();
-  }
-
-  const id = document.getElementById('pmId').value;
-  const slug = id ? undefined : generateSlug(name) + '-' + Date.now().toString(36);
-
   const payload = {
     name,
     category: document.getElementById('pmCategory').value,
@@ -1520,8 +1469,8 @@ async function saveProduct(){
     variant_label: document.getElementById('pmVariantLabel').value,
     variants
   };
-  if (slug) payload.slug = slug;
 
+  const id = document.getElementById('pmId').value;
   let result;
   if (id){
     result = await sb.from('products').update(payload).eq('id', id);
@@ -1601,40 +1550,7 @@ let coverImages = {}; // key → url
 
 async function loadCoverImages(){
   const { data, error } = await sb.from('cover_images').select('*');
-  if (error){
-    console.error(error);
-    const grid = document.getElementById('coverCardsGrid');
-    if (grid){
-      grid.innerHTML = `
-        <div style="grid-column:1/-1;background:var(--bg-3);border:1px solid var(--danger);
-             border-radius:var(--radius);padding:20px;color:var(--text);">
-          <p style="color:var(--danger);font-weight:700;margin-bottom:12px">
-            ⚠️ جدول <code>cover_images</code> غير موجود في Supabase
-          </p>
-          <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:14px">
-            افتح <strong>Supabase → SQL Editor</strong> وشغّل الـ SQL التالي مرة واحدة:
-          </p>
-          <pre style="background:var(--bg-0);border:1px solid var(--line);border-radius:6px;
-               padding:14px;font-size:.8rem;color:var(--gold-1);overflow-x:auto;direction:ltr;text-align:left">
-CREATE TABLE IF NOT EXISTS public.cover_images (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand_key    text UNIQUE NOT NULL,
-  brand_label  text,
-  image_url    text,
-  updated_at   timestamptz DEFAULT now()
-);
-ALTER TABLE public.cover_images ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "public read"  ON public.cover_images FOR SELECT USING (true);
-CREATE POLICY "anon insert"  ON public.cover_images FOR INSERT WITH CHECK (true);
-CREATE POLICY "anon update"  ON public.cover_images FOR UPDATE USING (true);
-          </pre>
-          <p style="color:var(--text-dim);font-size:.8rem;margin-top:10px">
-            بعد ما تشغّله، ارجع للصفحة دي واعمل Refresh.
-          </p>
-        </div>`;
-    }
-    return;
-  }
+  if (error){ console.error(error); return; }
   coverImages = {};
   (data||[]).forEach(row => { coverImages[row.brand_key] = row.image_url; });
   renderCoverCards();
