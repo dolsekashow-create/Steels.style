@@ -386,45 +386,33 @@
   .product-list-item .meta{color:var(--text-dim);font-size:.78rem}
   .product-list-item .actions{display:flex;gap:6px}
 
-  /* ── Variant image upload ── */
-  .variant-img-wrap{
-    display:flex;align-items:center;gap:10px;
-    padding:10px 12px;
-    background:var(--bg-2);border:1.5px dashed var(--line);border-radius:var(--radius-sm);
-    cursor:pointer;transition:all .2s;
-    position:relative;
-  }
-  .variant-img-wrap:hover{border-color:var(--gold-3);background:rgba(212,175,55,.04)}
-  .variant-img-thumb{
-    width:52px;height:52px;border-radius:6px;object-fit:cover;
-    border:1px solid var(--line);flex-shrink:0;background:var(--bg-3);
-    display:none;
-  }
-  .variant-img-thumb.visible{display:block}
-  .variant-img-placeholder{
-    width:52px;height:52px;border-radius:6px;
-    background:var(--bg-3);border:1px solid var(--line);
-    display:grid;place-items:center;color:var(--gold-3);font-size:1.3rem;flex-shrink:0;
-  }
-  .variant-img-info{flex:1;min-width:0}
-  .variant-img-info .vi-label{color:var(--gold-2);font-size:.82rem;font-weight:700;margin-bottom:3px}
-  .variant-img-info .vi-status{color:var(--text-dim);font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .variant-img-btn{
-    padding:6px 12px;border:none;border-radius:var(--radius-sm);
-    background:linear-gradient(135deg,var(--gold-1),var(--gold-2));
-    color:#000;font-weight:700;font-family:'Cairo';font-size:.78rem;
-    cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .2s;
-  }
-  .variant-img-btn:hover{box-shadow:0 4px 12px -2px var(--gold-glow)}
-  .variant-img-btn:disabled{opacity:.5;cursor:wait}
-  .variant-img-remove{
-    background:transparent;border:none;color:var(--danger);
-    cursor:pointer;font-size:1rem;font-weight:900;padding:2px 6px;
-    display:none;flex-shrink:0;
-  }
-  .variant-img-remove.visible{display:block}
-
   .order-details{background:var(--bg-3);padding:12px;border-radius:var(--radius-sm);margin-top:10px;font-size:.85rem}
+
+  /* ───── كاردات الكفرات ───── */
+  .cover-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;margin-top:4px}
+  .cover-admin-card{background:linear-gradient(180deg,var(--bg-2),var(--bg-3));border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:border-color .25s}
+  .cover-admin-card:hover{border-color:var(--gold-3)}
+  .cover-admin-card-head{padding:14px 16px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);background:rgba(212,175,55,.05)}
+  .cover-admin-card-icon{font-size:1.5rem;line-height:1}
+  .cover-admin-card-title{font-family:'Cinzel',serif;font-weight:700;letter-spacing:2px;font-size:.95rem;background:linear-gradient(135deg,var(--gold-1),var(--gold-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cover-img-zone{position:relative;background:var(--bg-3);aspect-ratio:1;overflow:hidden;display:grid;place-items:center;cursor:pointer}
+  .cover-img-zone img{width:100%;height:100%;object-fit:cover;display:none;transition:transform .4s;position:absolute;inset:0}
+  .cover-img-zone img.loaded{display:block}
+  .cover-img-zone:hover img.loaded{transform:scale(1.05)}
+  .cover-img-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--gold-3);opacity:.45;pointer-events:none;font-size:.82rem;text-align:center;padding:20px}
+  .cover-img-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center}
+  .cover-img-zone:hover .cover-img-overlay{display:grid}
+  .cover-img-overlay-btn{background:linear-gradient(135deg,var(--gold-1),var(--gold-2));color:#000;border:none;border-radius:var(--radius-sm);padding:9px 18px;font-weight:800;font-family:'Cairo';font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .cover-admin-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .cover-url-input{width:100%;padding:8px 10px;background:var(--bg-2);color:var(--text);border:1px solid var(--line);border-radius:var(--radius-sm);font-family:'Cairo';font-size:.8rem;outline:none;transition:border-color .2s}
+  .cover-url-input:focus{border-color:var(--gold-3)}
+  .cover-upload-status{font-size:.78rem;min-height:18px;color:var(--gold-2)}
+  .cover-save-btn{padding:9px;border:none;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--gold-1),var(--gold-2),var(--gold-3));color:#000;font-weight:800;font-family:'Cairo';font-size:.85rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+  .cover-save-btn:hover{box-shadow:0 4px 14px -2px var(--gold-glow);transform:translateY(-1px)}
+  .cover-save-btn:disabled{opacity:.5;cursor:wait;transform:none}
+  .cover-saved-badge{display:none;align-items:center;justify-content:center;gap:5px;padding:6px;border-radius:var(--radius-sm);background:rgba(58,157,94,.15);border:1px solid var(--ok);color:var(--ok);font-size:.8rem;font-weight:700}
+  .cover-saved-badge.show{display:flex}
+  @media(max-width:600px){.cover-cards-grid{grid-template-columns:1fr 1fr;gap:12px}.cover-admin-card-title{font-size:.78rem;letter-spacing:1px}}
   .order-details h5{color:var(--gold-2);margin-bottom:6px;font-size:.85rem}
   .order-item{padding:5px 0;border-bottom:1px dashed var(--line);font-size:.8rem}
   .order-item:last-child{border-bottom:none}
@@ -486,6 +474,7 @@
     <button class="tab active" onclick="switchTab('dashboard', this)">📊 لوحة التحكم</button>
     <button class="tab" onclick="switchTab('products', this)">🛍️ المنتجات</button>
     <button class="tab" onclick="switchTab('categories', this)">🗂️ الأقسام</button>
+    <button class="tab" onclick="switchTab('covers', this)">📱 كفرات موبايل</button>
     <button class="tab" onclick="switchTab('orders', this)">📦 الطلبات</button>
     <button class="tab" onclick="switchTab('settings', this)">⚙️ الإعدادات</button>
   </nav>
@@ -545,6 +534,22 @@
         الأقسام دي اللي بتظهر في قائمة "الأقسام" فوق في الموقع، وبتستخدمها لما تضيف منتج جديد.
       </p>
       <div id="categoriesList"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ─── Covers ─── -->
+  <div class="tab-content" id="tab-covers">
+    <div class="card">
+      <h3>
+        📱 صور كفرات الموبايل
+        <span style="color:var(--text-dim);font-size:.8rem;font-weight:400">كل براند بيتعرض كارد مستقل في الموقع</span>
+      </h3>
+      <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:20px">
+        ارفع صورة مناسبة لكل نوع من الكفرات — الصورة دي هتظهر في كارد الجهاز على الموقع الرئيسي.
+      </p>
+      <div class="cover-cards-grid" id="coverCardsGrid">
+        <div class="spinner"></div>
+      </div>
     </div>
   </div>
 
@@ -806,7 +811,7 @@ function switchTab(name, btn){
 
 // ─── Load data ───
 async function loadAll(){
-  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadSettings()]);
+  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadSettings(), loadCoverImages()]);
   updateDashboard();
 }
 
@@ -1068,20 +1073,6 @@ function addVariant(data = {}){
         <input type="text" placeholder="اضغط Enter لإضافة مقاس" onkeydown="addTag(event)">
       </div>
     </div>
-    <div class="form-group">
-      <label>📸 صورة هذا النوع/الخامة <small style="color:var(--text-dim);font-weight:400">(اختياري — تظهر بدل صورة المنتج عند اختيار هذا النوع)</small></label>
-      <input type="hidden" data-f="variant_image" value="${data.variant_image||''}">
-      <div class="variant-img-wrap" onclick="triggerVariantImgUpload(this)">
-        <div class="variant-img-placeholder">🖼️</div>
-        <img class="variant-img-thumb ${data.variant_image?'visible':''}" src="${data.variant_image||''}" alt="">
-        <div class="variant-img-info">
-          <div class="vi-label">📤 رفع صورة للنوع/الخامة</div>
-          <div class="vi-status">${data.variant_image ? '✓ تم رفع صورة' : 'اضغط لاختيار صورة من جهازك'}</div>
-        </div>
-        <button type="button" class="variant-img-btn" onclick="event.stopPropagation();triggerVariantImgUpload(this.closest('.variant-img-wrap'))">اختر صورة</button>
-        <button type="button" class="variant-img-remove ${data.variant_image?'visible':''}" onclick="event.stopPropagation();removeVariantImage(this)" title="حذف الصورة">✕</button>
-      </div>
-    </div>
   `;
   list.appendChild(row);
 
@@ -1341,7 +1332,6 @@ async function uploadColorImage(btn){
   input.click();
 }
 
-function addTag(e){ handleTagInput(e); }
 function handleTagInput(e){
   if (e.key !== 'Enter') return;
   e.preventDefault();
@@ -1352,75 +1342,6 @@ function handleTagInput(e){
   tag.innerHTML = `${val}<button type="button" onclick="this.parentElement.remove()">×</button>`;
   e.target.parentElement.insertBefore(tag, e.target);
   e.target.value = '';
-}
-
-// ─── Variant Image Upload ───
-function triggerVariantImgUpload(wrap){
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.style.display = 'none';
-  document.body.appendChild(input);
-
-  input.onchange = async () => {
-    const file = input.files[0];
-    input.remove();
-    if (!file) return;
-
-    const btn     = wrap.querySelector('.variant-img-btn');
-    const status  = wrap.querySelector('.vi-status');
-    const thumb   = wrap.querySelector('.variant-img-thumb');
-    const placeholder = wrap.querySelector('.variant-img-placeholder');
-    const hiddenInput = wrap.closest('.form-group') ? wrap.closest('[data-role-variant]') : null;
-    const removeBtn   = wrap.querySelector('.variant-img-remove');
-
-    btn.disabled = true;
-    btn.textContent = '⏳';
-    status.textContent = 'جاري الرفع...';
-
-    try {
-      const url = await uploadFile(file, 'products');
-
-      // حفظ الـ URL في الـ hidden input
-      const hid = wrap.parentElement.querySelector('[data-f="variant_image"]');
-      if (hid) hid.value = url;
-
-      // عرض الصورة
-      thumb.src = url;
-      thumb.classList.add('visible');
-      placeholder.style.display = 'none';
-
-      status.textContent = '✓ تم الرفع بنجاح';
-      btn.textContent = 'تغيير';
-      btn.disabled = false;
-      if (removeBtn) removeBtn.classList.add('visible');
-
-      toast('✓ تم رفع الصورة', 'success');
-    } catch(err) {
-      status.textContent = '✕ فشل الرفع: ' + (err.message || 'خطأ');
-      btn.textContent = 'اختر صورة';
-      btn.disabled = false;
-    }
-  };
-
-  input.click();
-}
-
-function removeVariantImage(btn){
-  const wrap = btn.closest('.variant-img-wrap');
-  const hid  = wrap.parentElement.querySelector('[data-f="variant_image"]');
-  const thumb = wrap.querySelector('.variant-img-thumb');
-  const placeholder = wrap.querySelector('.variant-img-placeholder');
-  const status = wrap.querySelector('.vi-status');
-  const uploadBtn = wrap.querySelector('.variant-img-btn');
-
-  if (hid) hid.value = '';
-  thumb.src = '';
-  thumb.classList.remove('visible');
-  placeholder.style.display = '';
-  status.textContent = 'اضغط لاختيار صورة من جهازك';
-  uploadBtn.textContent = 'اختر صورة';
-  btn.classList.remove('visible');
 }
 
 function collectVariants(){
@@ -1436,11 +1357,8 @@ function collectVariants(){
       image: tag.dataset.image || ''
     }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
-    const variantImageEl = row.querySelector('[data-f="variant_image"]');
-    const variant_image  = variantImageEl ? variantImageEl.value.trim() : '';
     const v = { price, colors, sizes };
     if (type) v.type = type;
-    if (variant_image) v.variant_image = variant_image;
     variants.push(v);
   });
   return variants;
@@ -1530,6 +1448,140 @@ async function uploadLogo(e){
     console.error(err);
     status.textContent = '✕ فشل الرفع: ' + (err.message||'خطأ');
   }
+}
+
+// ─── Cover Images ───
+const COVER_BRANDS_META = [
+  { key: 'iphone',  label: 'iPhone',  icon: '🍎' },
+  { key: 'samsung', label: 'Samsung', icon: '📱' },
+  { key: 'xiaomi',  label: 'Xiaomi',  icon: '🔴' },
+  { key: 'oppo',    label: 'Oppo',    icon: '⭕'  }
+];
+
+let coverImages = {}; // key → url
+
+async function loadCoverImages(){
+  const { data, error } = await sb.from('cover_images').select('*');
+  if (error){ console.error(error); return; }
+  coverImages = {};
+  (data||[]).forEach(row => { coverImages[row.brand_key] = row.image_url; });
+  renderCoverCards();
+}
+
+function renderCoverCards(){
+  const grid = document.getElementById('coverCardsGrid');
+  grid.innerHTML = COVER_BRANDS_META.map(b => {
+    const url = coverImages[b.key] || '';
+    return `
+      <div class="cover-admin-card" id="cover-card-${b.key}">
+        <div class="cover-admin-card-head">
+          <span class="cover-admin-card-icon">${b.icon}</span>
+          <span class="cover-admin-card-title">${b.label}</span>
+        </div>
+
+        <!-- منطقة الصورة — اضغط عليها لرفع صورة جديدة -->
+        <div class="cover-img-zone" onclick="triggerCoverUpload('${b.key}')">
+          <div class="cover-img-placeholder">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/>
+            </svg>
+            لا توجد صورة بعد<br>اضغط لإضافة صورة
+          </div>
+          <img id="cover-img-${b.key}" src="${url}" alt="${b.label}"
+               class="${url ? 'loaded' : ''}"
+               onerror="this.classList.remove('loaded')">
+          <div class="cover-img-overlay">
+            <button class="cover-img-overlay-btn" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              تغيير الصورة
+            </button>
+          </div>
+          <input type="file" id="cover-file-${b.key}" accept="image/*" style="display:none"
+                 onchange="uploadCoverImage(event,'${b.key}')">
+        </div>
+
+        <div class="cover-admin-body">
+          <div>
+            <label style="font-size:.78rem;color:var(--text-dim);font-weight:600;display:block;margin-bottom:4px">أو ألصق رابط صورة مباشرة:</label>
+            <input class="cover-url-input" id="cover-url-${b.key}"
+                   type="text" placeholder="https://..." value="${url}"
+                   oninput="previewCoverUrl('${b.key}')">
+          </div>
+          <div class="cover-upload-status" id="cover-status-${b.key}"></div>
+          <button class="cover-save-btn" id="cover-save-${b.key}"
+                  onclick="saveCoverImage('${b.key}','${b.label}')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+            حفظ الصورة
+          </button>
+          <div class="cover-saved-badge" id="cover-badge-${b.key}">✓ تم الحفظ بنجاح</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function triggerCoverUpload(key){
+  document.getElementById(`cover-file-${key}`).click();
+}
+
+async function uploadCoverImage(e, key){
+  const file = e.target.files[0];
+  if (!file) return;
+  const status = document.getElementById(`cover-status-${key}`);
+  const saveBtn = document.getElementById(`cover-save-${key}`);
+  status.textContent = '⏳ جاري الرفع...';
+  saveBtn.disabled = true;
+  try {
+    const url = await uploadFile(file, 'covers');
+    document.getElementById(`cover-url-${key}`).value = url;
+    const img = document.getElementById(`cover-img-${key}`);
+    img.src = url;
+    img.classList.add('loaded');
+    status.textContent = '✓ تم الرفع — اضغط حفظ';
+    saveBtn.disabled = false;
+  } catch(err){
+    status.textContent = '✕ فشل الرفع: ' + (err.message||'خطأ');
+    saveBtn.disabled = false;
+  }
+}
+
+function previewCoverUrl(key){
+  const url = document.getElementById(`cover-url-${key}`).value.trim();
+  const img = document.getElementById(`cover-img-${key}`);
+  if (url){ img.src = url; img.classList.add('loaded'); }
+  else img.classList.remove('loaded');
+}
+
+async function saveCoverImage(key, label){
+  const url = document.getElementById(`cover-url-${key}`).value.trim();
+  const status = document.getElementById(`cover-status-${key}`);
+  const saveBtn = document.getElementById(`cover-save-${key}`);
+  const badge = document.getElementById(`cover-badge-${key}`);
+
+  if (!url){ toast('أضف رابط أو ارفع صورة أولاً', 'error'); return; }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = '⏳ جاري الحفظ...';
+  badge.classList.remove('show');
+
+  const { error } = await sb.from('cover_images')
+    .upsert([{ brand_key: key, brand_label: label, image_url: url }],
+            { onConflict: 'brand_key' });
+
+  if (error){
+    console.error(error);
+    toast('فشل الحفظ: ' + error.message, 'error');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg> حفظ الصورة`;
+    return;
+  }
+
+  coverImages[key] = url;
+  status.textContent = '';
+  saveBtn.disabled = false;
+  saveBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg> حفظ الصورة`;
+  badge.classList.add('show');
+  setTimeout(() => badge.classList.remove('show'), 3000);
+  toast(`✓ تم حفظ صورة ${label}`, 'success');
 }
 
 // ─── Orders ───
