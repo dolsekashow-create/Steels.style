@@ -813,7 +813,7 @@
 
       <!-- 🆕 النوع الفرعي + زر تطبيق القالب -->
       <div class="form-group" id="pmPresetWrap" style="display:none">
-        <label>النوع الفرعي (يملأ الألوان والسعر والمقاسات تلقائياً)</label>
+        <label>القالب الجاهز (يملأ الألوان والسعر والمقاسات تلقائياً)</label>
         <div style="display:flex;gap:8px;align-items:stretch">
           <select id="pmPreset" style="flex:1"></select>
           <button type="button" class="btn btn-primary btn-small" onclick="applyPreset()" style="white-space:nowrap">
@@ -821,7 +821,7 @@
           </button>
         </div>
         <small style="color:var(--text-dim);font-size:.75rem">
-          اختر النوع ثم اضغط "تطبيق القالب" ليتم ملء الألوان والسعر والمقاسات. تقدر تعدّل أي حاجة بعد كده.
+          اختر القالب المناسب ثم اضغط "تطبيق القالب". تقدر تعدّل أي حاجة بعد كده.
         </small>
       </div>
       <div class="form-group">
@@ -1296,33 +1296,53 @@ function getPresetsForCategory(slug){
   return PRODUCT_PRESETS[key] || null;
 }
 
-// ─── تحديث دروبداون الـ presets عند تغيير الفئة ───
+// ─── عناوين المجموعات في الدروبداون (لأسماء الفئات بالعربي) ───
+const PRESET_GROUP_LABELS = {
+  tshirts: '👕 بلايز',
+  hoodies: '🧥 هوديات',
+  frames:  '🖼️ براويز',
+  caps:    '🧢 كاب',
+  beanies: '🎩 طواقي'
+};
+
+// ─── دور على preset بـ key عبر كل الفئات ───
+function findPresetByKey(key){
+  if (!key) return null;
+  for (const [cat, presets] of Object.entries(PRODUCT_PRESETS)){
+    const found = presets.find(p => p.key === key);
+    if (found) return found;
+  }
+  return null;
+}
+
+// ─── إظهار كل القوالب دايماً (بغض النظر عن الفئة المختارة) ───
 function onCategoryChange(){
-  const slug = document.getElementById('pmCategory').value;
-  const presets = getPresetsForCategory(slug);
   const wrap = document.getElementById('pmPresetWrap');
   const select = document.getElementById('pmPreset');
 
-  if (!presets || !presets.length){
-    wrap.style.display = 'none';
-    select.innerHTML = '';
-    return;
-  }
+  // ابني الدروبداون بـ optgroups لكل فئة
+  let html = '<option value="">— بدون قالب (إدخال يدوي) —</option>';
+  Object.entries(PRODUCT_PRESETS).forEach(([cat, presets]) => {
+    if (!presets || !presets.length) return;
+    const label = PRESET_GROUP_LABELS[cat] || cat;
+    html += `<optgroup label="${label}">`;
+    presets.forEach(p => {
+      html += `<option value="${p.key}">${p.label} (${p.price} ₪)</option>`;
+    });
+    html += '</optgroup>';
+  });
+
+  select.innerHTML = html;
   wrap.style.display = '';
-  select.innerHTML =
-    '<option value="">— بدون قالب (إدخال يدوي) —</option>' +
-    presets.map(p => `<option value="${p.key}">${p.label} (${p.price} ₪)</option>`).join('');
 }
 
 // ─── تطبيق القالب على الفورم ───
 function applyPreset(){
-  const slug = document.getElementById('pmCategory').value;
-  const presets = getPresetsForCategory(slug);
   const key = document.getElementById('pmPreset').value;
-  if (!presets || !key){ toast('اختر نوع فرعي أولاً', 'error'); return; }
+  if (!key){ toast('اختر قالب أولاً', 'error'); return; }
 
-  const preset = presets.find(p => p.key === key);
-  if (!preset) return;
+  const preset = findPresetByKey(key);
+  if (!preset){ toast('القالب مش موجود', 'error'); return; }
 
   // اسم المنتج — لو فاضي، املاه بالاسم الافتراضي. لو فيه اسم، سيبه كما هو.
   const nameInput = document.getElementById('pmName');
