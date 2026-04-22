@@ -386,6 +386,44 @@
   .product-list-item .meta{color:var(--text-dim);font-size:.78rem}
   .product-list-item .actions{display:flex;gap:6px}
 
+  /* ── Variant image upload ── */
+  .variant-img-wrap{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;
+    background:var(--bg-2);border:1.5px dashed var(--line);border-radius:var(--radius-sm);
+    cursor:pointer;transition:all .2s;
+    position:relative;
+  }
+  .variant-img-wrap:hover{border-color:var(--gold-3);background:rgba(212,175,55,.04)}
+  .variant-img-thumb{
+    width:52px;height:52px;border-radius:6px;object-fit:cover;
+    border:1px solid var(--line);flex-shrink:0;background:var(--bg-3);
+    display:none;
+  }
+  .variant-img-thumb.visible{display:block}
+  .variant-img-placeholder{
+    width:52px;height:52px;border-radius:6px;
+    background:var(--bg-3);border:1px solid var(--line);
+    display:grid;place-items:center;color:var(--gold-3);font-size:1.3rem;flex-shrink:0;
+  }
+  .variant-img-info{flex:1;min-width:0}
+  .variant-img-info .vi-label{color:var(--gold-2);font-size:.82rem;font-weight:700;margin-bottom:3px}
+  .variant-img-info .vi-status{color:var(--text-dim);font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .variant-img-btn{
+    padding:6px 12px;border:none;border-radius:var(--radius-sm);
+    background:linear-gradient(135deg,var(--gold-1),var(--gold-2));
+    color:#000;font-weight:700;font-family:'Cairo';font-size:.78rem;
+    cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .2s;
+  }
+  .variant-img-btn:hover{box-shadow:0 4px 12px -2px var(--gold-glow)}
+  .variant-img-btn:disabled{opacity:.5;cursor:wait}
+  .variant-img-remove{
+    background:transparent;border:none;color:var(--danger);
+    cursor:pointer;font-size:1rem;font-weight:900;padding:2px 6px;
+    display:none;flex-shrink:0;
+  }
+  .variant-img-remove.visible{display:block}
+
   .order-details{background:var(--bg-3);padding:12px;border-radius:var(--radius-sm);margin-top:10px;font-size:.85rem}
   .order-details h5{color:var(--gold-2);margin-bottom:6px;font-size:.85rem}
   .order-item{padding:5px 0;border-bottom:1px dashed var(--line);font-size:.8rem}
@@ -1030,6 +1068,20 @@ function addVariant(data = {}){
         <input type="text" placeholder="اضغط Enter لإضافة مقاس" onkeydown="addTag(event)">
       </div>
     </div>
+    <div class="form-group">
+      <label>📸 صورة هذا النوع/الخامة <small style="color:var(--text-dim);font-weight:400">(اختياري — تظهر بدل صورة المنتج عند اختيار هذا النوع)</small></label>
+      <input type="hidden" data-f="variant_image" value="${data.variant_image||''}">
+      <div class="variant-img-wrap" onclick="triggerVariantImgUpload(this)">
+        <div class="variant-img-placeholder">🖼️</div>
+        <img class="variant-img-thumb ${data.variant_image?'visible':''}" src="${data.variant_image||''}" alt="">
+        <div class="variant-img-info">
+          <div class="vi-label">📤 رفع صورة للنوع/الخامة</div>
+          <div class="vi-status">${data.variant_image ? '✓ تم رفع صورة' : 'اضغط لاختيار صورة من جهازك'}</div>
+        </div>
+        <button type="button" class="variant-img-btn" onclick="event.stopPropagation();triggerVariantImgUpload(this.closest('.variant-img-wrap'))">اختر صورة</button>
+        <button type="button" class="variant-img-remove ${data.variant_image?'visible':''}" onclick="event.stopPropagation();removeVariantImage(this)" title="حذف الصورة">✕</button>
+      </div>
+    </div>
   `;
   list.appendChild(row);
 
@@ -1289,6 +1341,7 @@ async function uploadColorImage(btn){
   input.click();
 }
 
+function addTag(e){ handleTagInput(e); }
 function handleTagInput(e){
   if (e.key !== 'Enter') return;
   e.preventDefault();
@@ -1299,6 +1352,75 @@ function handleTagInput(e){
   tag.innerHTML = `${val}<button type="button" onclick="this.parentElement.remove()">×</button>`;
   e.target.parentElement.insertBefore(tag, e.target);
   e.target.value = '';
+}
+
+// ─── Variant Image Upload ───
+function triggerVariantImgUpload(wrap){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    input.remove();
+    if (!file) return;
+
+    const btn     = wrap.querySelector('.variant-img-btn');
+    const status  = wrap.querySelector('.vi-status');
+    const thumb   = wrap.querySelector('.variant-img-thumb');
+    const placeholder = wrap.querySelector('.variant-img-placeholder');
+    const hiddenInput = wrap.closest('.form-group') ? wrap.closest('[data-role-variant]') : null;
+    const removeBtn   = wrap.querySelector('.variant-img-remove');
+
+    btn.disabled = true;
+    btn.textContent = '⏳';
+    status.textContent = 'جاري الرفع...';
+
+    try {
+      const url = await uploadFile(file, 'products');
+
+      // حفظ الـ URL في الـ hidden input
+      const hid = wrap.parentElement.querySelector('[data-f="variant_image"]');
+      if (hid) hid.value = url;
+
+      // عرض الصورة
+      thumb.src = url;
+      thumb.classList.add('visible');
+      placeholder.style.display = 'none';
+
+      status.textContent = '✓ تم الرفع بنجاح';
+      btn.textContent = 'تغيير';
+      btn.disabled = false;
+      if (removeBtn) removeBtn.classList.add('visible');
+
+      toast('✓ تم رفع الصورة', 'success');
+    } catch(err) {
+      status.textContent = '✕ فشل الرفع: ' + (err.message || 'خطأ');
+      btn.textContent = 'اختر صورة';
+      btn.disabled = false;
+    }
+  };
+
+  input.click();
+}
+
+function removeVariantImage(btn){
+  const wrap = btn.closest('.variant-img-wrap');
+  const hid  = wrap.parentElement.querySelector('[data-f="variant_image"]');
+  const thumb = wrap.querySelector('.variant-img-thumb');
+  const placeholder = wrap.querySelector('.variant-img-placeholder');
+  const status = wrap.querySelector('.vi-status');
+  const uploadBtn = wrap.querySelector('.variant-img-btn');
+
+  if (hid) hid.value = '';
+  thumb.src = '';
+  thumb.classList.remove('visible');
+  placeholder.style.display = '';
+  status.textContent = 'اضغط لاختيار صورة من جهازك';
+  uploadBtn.textContent = 'اختر صورة';
+  btn.classList.remove('visible');
 }
 
 function collectVariants(){
@@ -1314,8 +1436,11 @@ function collectVariants(){
       image: tag.dataset.image || ''
     }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
+    const variantImageEl = row.querySelector('[data-f="variant_image"]');
+    const variant_image  = variantImageEl ? variantImageEl.value.trim() : '';
     const v = { price, colors, sizes };
     if (type) v.type = type;
+    if (variant_image) v.variant_image = variant_image;
     variants.push(v);
   });
   return variants;
