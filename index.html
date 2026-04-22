@@ -1344,6 +1344,7 @@ let products = [];
 let categories = [];
 const productsMap = new Map();
 let cart = JSON.parse(localStorage.getItem('steels_cart') || '[]');
+let coverImagesMap = {}; // brand_key → image_url
 
 // ─── Color map (Arabic name → hex) ───
 const COLOR_MAP = {
@@ -2340,16 +2341,18 @@ const BRAND_META = {
 
 // ─── بناء section الكفرات بـ 4 كاردات ثابتة ───
 function buildCoverSection(cat){
-  // الصورة الأساسية من أول منتج في القسم (لو موجود)
-  const items = products.filter(p => p.category === cat.slug);
-  const coverImg = items.length && items[0].image_url ? items[0].image_url : '';
-
   const cards = Object.keys(PHONE_MODELS).map(brand => {
-    const meta = BRAND_META[brand] || { icon:'📱', label: brand };
-    const models = PHONE_MODELS[brand];
-    const imgHtml = coverImg
-      ? `<img src="${coverImg}" alt="كفر ${brand}" loading="lazy">`
-      : `<div class="no-img">${meta.icon}</div>`;
+    const meta      = BRAND_META[brand] || { icon:'📱', label: brand };
+    const brandKey  = brand.toLowerCase();
+    // الصورة: أولاً من cover_images في Supabase، وإلا من أول منتج في القسم
+    const dbImg     = coverImagesMap[brandKey] || '';
+    const fallback  = (products.find(p => p.category === cat.slug && p.image_url) || {}).image_url || '';
+    const imgUrl    = dbImg || fallback;
+    const models    = PHONE_MODELS[brand];
+
+    const imgHtml = imgUrl
+      ? `<img src="${imgUrl}" alt="كفر ${brand}" loading="lazy">`
+      : `<div class="no-img" style="font-size:3rem;display:grid;place-items:center;width:100%;height:100%;opacity:.3">${meta.icon}</div>`;
 
     return `
       <div class="cover-brand-card" data-brand="${brand}">
@@ -2357,7 +2360,7 @@ function buildCoverSection(cat){
           <span class="cover-brand-icon">${meta.icon}</span>
           <span class="cover-brand-name">${meta.label}</span>
         </div>
-        <div class="cover-brand-img ${coverImg?'':'no-img'}">
+        <div class="cover-brand-img ${imgUrl?'':'no-img'}">
           ${imgHtml}
         </div>
         <div class="cover-brand-body">
@@ -2371,7 +2374,7 @@ function buildCoverSection(cat){
             <span class="num">40</span>
             <span class="cur">شيقل</span>
           </div>
-          <button class="cover-add-btn" onclick="addCoverToCart(this,'${brand}','${cat.slug}','${coverImg}')">
+          <button class="cover-add-btn" onclick="addCoverToCart(this,'${brand}','${cat.slug}','${imgUrl}')">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 3v2h2l3.6 7.6-1.4 2.4c-.2.3-.2.7 0 1 .2.3.5.5.9.5h12v-2H7.4l1-2h7c.8 0 1.4-.4 1.7-1l3.5-6.3c.2-.3.2-.7 0-1-.2-.3-.6-.5-1-.5H5.2l-1-2H1zm16 15c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
             أضف للسلة
           </button>
@@ -2513,11 +2516,20 @@ function attachExtras(card){
   // (الصور بتيجي من data-image المحفوظ مع كل لون في Supabase)
 }
 
+// ─── Load cover images from Supabase ───
+async function loadCoverImages(){
+  const { data, error } = await sb.from('cover_images').select('brand_key, image_url');
+  if (error){ console.warn('cover_images:', error.message); return; }
+  coverImagesMap = {};
+  (data||[]).forEach(r => { if(r.image_url) coverImagesMap[r.brand_key] = r.image_url; });
+}
+
 // ─── Init ───
 document.getElementById('year').textContent = new Date().getFullYear();
 updateCartBadge();
 (async () => {
   await loadSettings();
+  await loadCoverImages();
   await loadCategories();
   await loadProducts();
 })();
