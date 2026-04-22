@@ -384,6 +384,21 @@
     transition:transform .6s ease, opacity .25s ease;
   }
   .product-image img.img-fade{opacity:0}
+  /* ── Canvas color overlay ── */
+  .color-canvas{
+    position:absolute;inset:0;width:100%;height:100%;
+    pointer-events:none;mix-blend-mode:multiply;
+    transition:opacity .3s;opacity:0;
+  }
+  .color-canvas.visible{opacity:1}
+  /* ── Phone model dropdown ── */
+  .phone-brand-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .phone-brand-tab{
+    padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;
+    border:1.5px solid var(--line);background:var(--bg-3);color:var(--text-dim);
+    cursor:pointer;transition:all .2s;font-family:var(--font-ar);
+  }
+  .phone-brand-tab.active{border-color:var(--gold-2);color:var(--gold-1);background:rgba(212,175,55,.1)}
 
   /* ───── زر عرض المزيد على الكارد ───── */
   .btn-more-desc{
@@ -1498,7 +1513,10 @@ function renderAll(){
   }).join('');
 
   // Attach listeners
-  document.querySelectorAll('.product-card').forEach(attachCardHandlers);
+  document.querySelectorAll('.product-card').forEach(card => {
+    attachCardHandlers(card);
+    attachExtras(card);
+  });
   // Initially hide the extras
   document.querySelectorAll('.hidden-products').forEach(el => {
     el.style.display = 'none';
@@ -1660,16 +1678,19 @@ function attachCardHandlers(card){
     const size = sizeSelect && sizeSelect.value ? sizeSelect.value : '';
     const colorEl = colorsBox ? colorsBox.querySelector('.color-swatch.active') : null;
     const color = colorEl ? colorEl.dataset.color : '';
-    
+    const phoneModelEl = card.querySelector('.phone-model-select');
+    const phoneModel = phoneModelEl ? phoneModelEl.value : '';
+    const isCase = !!phoneModelEl;
+
     addToCart({
       id: product.id,
       name: product.name,
       image: product.image_url || '',
       variantType: v.type || '',
       variantLabel: product.variant_label || 'الخامة',
-      size: size,
+      size: phoneModel || size,
       color: color,
-      price: v.price || 0,
+      price: isCase ? 40 : (v.price || 0),
       qty: 1
     });
   });
@@ -2139,6 +2160,155 @@ document.querySelectorAll('#mainMenu > li > a').forEach(a=>{
     a.addEventListener('click', ()=>closeMobileMenu());
   }
 });
+
+// ─── Phone Models Data ───
+const PHONE_MODELS = {
+  'iPhone': [
+    'iPhone 6','iPhone 6+','iPhone 8','iPhone 8+',
+    'iPhone X / XS','iPhone X Max',
+    'iPhone 11','iPhone 11 Pro','iPhone 11 Pro Max',
+    'iPhone 12 / 12 Pro','iPhone 12 Mini','iPhone 12 Pro Max',
+    'iPhone 13','iPhone 13 Pro','iPhone 13 Pro Max',
+    'iPhone 14','iPhone 14+','iPhone 14 Pro','iPhone 14 Pro Max',
+    'iPhone 15','iPhone 15 Pro','iPhone 15 Pro Max',
+    'iPhone 16','iPhone 16+','iPhone 16 Pro','iPhone 16 Pro Max',
+    'iPhone 17','iPhone 17 Pro','iPhone 17 Air','iPhone 17 Pro Max'
+  ],
+  'Samsung': [
+    'Note 5','Note 10 Pro','Note 20','Note 20 Ultra',
+    'Samsung J4 2018','Samsung J6 2018','Samsung J7 Pro',
+    'Samsung A02s','Samsung A6 2018','Samsung A8 2018','Samsung A9 2018',
+    'Samsung A10','Samsung A10s','Samsung A11','Samsung A12','Samsung A13','Samsung A16',
+    'Samsung A20','Samsung A20s','Samsung A21','Samsung A21s',
+    'Samsung A23','Samsung A24','Samsung A30','Samsung A30s',
+    'Samsung A31','Samsung A32','Samsung A34','Samsung A50','Samsung A52','Samsung A54',
+    'Samsung A03','Samsung A03s','Samsung A05s','Samsung A35 5G',
+    'Samsung S8+','Samsung S9','Samsung S9+',
+    'Samsung S10','Samsung S10 Lite',
+    'Note 10','Note 10 Lite',
+    'Samsung S20','Samsung S20+','Samsung S20 Ultra',
+    'Samsung S21+','Samsung S21 Ultra',
+    'Samsung S22+','Samsung S22 Ultra',
+    'Samsung S23','Samsung S23+','Samsung S23 Ultra',
+    'Samsung S24','Samsung S24+','Samsung S24 Ultra',
+    'Samsung S25','Samsung S25+','Samsung S25 Ultra'
+  ],
+  'Xiaomi': [
+    'Mi S2','Mi Note 6 Pro','Mi Note 7 Pro','Mi Note 8','Mi 8 Lite',
+    'Mi Note 9','Mi Note 10','Redmi 9',
+    'Mi Note 11','Mi Note 11 Pro','Mi Note 12 Pro','Mi Note 13','Mi Note 13 Pro'
+  ],
+  'Oppo': [
+    'Oppo A53','Oppo A73','Oppo A33'
+  ]
+};
+
+// ─── Inject phone model selector into case-category cards ───
+function isPhoneCaseCategory(catSlug){
+  return catSlug && (catSlug.includes('جراب') || catSlug.includes('case') || catSlug.includes('cover') || catSlug.includes('كفر'));
+}
+
+function buildPhoneModelSelector(cardEl){
+  // Don't double-inject
+  if (cardEl.querySelector('.phone-brand-tabs')) return;
+  const body = cardEl.querySelector('.product-body');
+  if (!body) return;
+  const priceEl = cardEl.querySelector('[data-role="price"]');
+
+  // Force price to 40
+  if (priceEl) priceEl.textContent = '40';
+
+  const brands = Object.keys(PHONE_MODELS);
+  const wrap = document.createElement('div');
+  wrap.className = 'phone-model-wrap';
+  wrap.innerHTML = `
+    <label class="field-label">الجهاز:</label>
+    <div class="phone-brand-tabs">
+      ${brands.map((b,i)=>`<button type="button" class="phone-brand-tab${i===0?' active':''}" data-brand="${b}">${b}</button>`).join('')}
+    </div>
+    <select class="phone-model-select" data-role="phone-model">
+      ${PHONE_MODELS[brands[0]].map(m=>`<option value="${m}">${m}</option>`).join('')}
+    </select>`;
+
+  // Insert before price tag
+  const priceTag = body.querySelector('.price-tag');
+  if (priceTag) body.insertBefore(wrap, priceTag);
+  else body.appendChild(wrap);
+
+  // Brand tab switching
+  wrap.querySelectorAll('.phone-brand-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      wrap.querySelectorAll('.phone-brand-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const sel = wrap.querySelector('.phone-model-select');
+      sel.innerHTML = PHONE_MODELS[tab.dataset.brand].map(m=>`<option value="${m}">${m}</option>`).join('');
+    });
+  });
+}
+
+// ─── Canvas Color Tinting ───
+function applyColorTint(card, hexColor){
+  const imgWrap = card.querySelector('.product-image');
+  if (!imgWrap) return;
+
+  // Remove old canvas
+  const old = imgWrap.querySelector('.color-canvas');
+  if (old) old.remove();
+
+  if (!hexColor || hexColor === 'transparent' || hexColor === '#888') return;
+
+  // Create canvas overlay
+  const canvas = document.createElement('canvas');
+  canvas.className = 'color-canvas';
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:multiply;transition:opacity .3s;';
+
+  const imgEl = imgWrap.querySelector('img');
+  if (!imgEl) return;
+
+  imgWrap.appendChild(canvas);
+
+  const paint = () => {
+    canvas.width  = imgEl.naturalWidth  || imgEl.offsetWidth  || 300;
+    canvas.height = imgEl.naturalHeight || imgEl.offsetHeight || 300;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = hexColor;
+    ctx.globalAlpha = 0.55;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    canvas.style.opacity = '1';
+  };
+
+  if (imgEl.complete && imgEl.naturalWidth) paint();
+  else imgEl.addEventListener('load', paint, {once:true});
+}
+
+// ─── Post-attach extras: phone model selector + canvas tinting ───
+function attachExtras(card){
+  // Phone model dropdown for case/cover sections
+  const section = card.closest('section.category');
+  if (section && isPhoneCaseCategory(section.id)){
+    buildPhoneModelSelector(card);
+  }
+
+  // Canvas color tinting on swatch click
+  const colorsBox = card.querySelector('[data-role="colors"]');
+  if (colorsBox){
+    colorsBox.querySelectorAll('.color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        const hex = sw.style.background || colorHex(sw.dataset.color);
+        applyColorTint(card, hex);
+      });
+    });
+    // Apply tint for first swatch on load
+    const firstActive = colorsBox.querySelector('.color-swatch.active');
+    if (firstActive){
+      setTimeout(() => {
+        const hex = firstActive.style.background || colorHex(firstActive.dataset.color);
+        applyColorTint(card, hex);
+      }, 100);
+    }
+  }
+}
 
 // ─── Init ───
 document.getElementById('year').textContent = new Date().getFullYear();
