@@ -1837,12 +1837,12 @@ const COVER_BRANDS = ['iPhone','Samsung','Xiaomi','Oppo'];
 
 function buildSection(id, title, subtitle, items, brandFilter){
   // بنعرض أول 6 منتجات بس على الصفحة الرئيسية. الباقي يظهر في صفحة القسم (section.html).
-  const hasMore = items.length > VISIBLE_PER_SECTION;
-  const visibleItems = hasMore ? items.slice(0, VISIBLE_PER_SECTION) : items;
+  const visibleItems = items.slice(0, VISIBLE_PER_SECTION);
   const grid = !items.length
     ? '<p style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:30px">لا توجد منتجات في هذا القسم حالياً</p>'
     : visibleItems.map(p => renderCard(p, brandFilter)).join('');
-  const showMorePill = hasMore
+  // زر "عرض المزيد" يظهر دايماً طول ما في منتجات — يفتح صفحة القسم المنفصلة
+  const showMorePill = items.length
     ? `<a class="show-more-pill" href="section.html?cat=${encodeURIComponent(id)}">عرض المزيد ←</a>`
     : '';
   return `
