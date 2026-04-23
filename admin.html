@@ -628,7 +628,9 @@
     <button class="tab active" onclick="switchTab('dashboard', this)">📊 لوحة التحكم</button>
     <button class="tab" onclick="switchTab('products', this)">🛍️ المنتجات</button>
     <button class="tab" onclick="switchTab('categories', this)">🗂️ الأقسام</button>
+    <button class="tab" onclick="switchTab('characters', this)">👤 الشخصيات</button>
     <button class="tab" onclick="switchTab('covers', this)">📱 كفرات موبايل</button>
+    <button class="tab" onclick="switchTab('phones', this)">📲 موديلات الموبايل</button>
     <button class="tab" onclick="switchTab('orders', this)">📦 الطلبات</button>
     <button class="tab" onclick="switchTab('settings', this)">⚙️ الإعدادات</button>
   </nav>
@@ -691,6 +693,21 @@
     </div>
   </div>
 
+  <!-- ─── Characters ─── -->
+  <div class="tab-content" id="tab-characters">
+    <div class="card">
+      <h3>
+        👤 إدارة الشخصيات
+        <button class="btn btn-primary btn-small" onclick="openCharacterForm()">+ إضافة شخصية</button>
+      </h3>
+      <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:14px">
+        الشخصيات دي بتظهر تحت "شخصيات للموقع" في صفحة البحث. لما تضيف أو تعدل منتج، تقدر تربطه بشخصية من هنا.
+        العميل بيقدر يضغط على الشخصية ويشوف كل المنتجات المرتبطة بيها.
+      </p>
+      <div id="charactersList"><div class="spinner"></div></div>
+    </div>
+  </div>
+
   <!-- ─── Covers ─── -->
   <div class="tab-content" id="tab-covers">
     <div class="card">
@@ -704,6 +721,30 @@
       <div class="cover-cards-grid" id="coverCardsGrid">
         <div class="spinner"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ─── Phone Models ─── -->
+  <div class="tab-content" id="tab-phones">
+    <div class="card">
+      <h3>
+        📲 موديلات الموبايل
+        <button class="btn btn-primary btn-small" onclick="openPhoneModelForm()">+ إضافة موديل</button>
+      </h3>
+      <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:14px">
+        الموديلات دي اللي بتظهر في قائمة "اختر الموديل" على كارد الكفرات.
+      </p>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>تصفية حسب البراند</label>
+        <select id="filterPhoneBrand" onchange="renderPhoneModels()">
+          <option value="">الكل</option>
+          <option value="iPhone">iPhone</option>
+          <option value="Samsung">Samsung</option>
+          <option value="Xiaomi">Xiaomi</option>
+          <option value="Oppo">Oppo</option>
+        </select>
+      </div>
+      <div id="phoneModelsList"><div class="spinner"></div></div>
     </div>
   </div>
 
@@ -822,6 +863,13 @@
         </div>
       </div>
       <div class="form-group">
+        <label>الشخصية (اختياري)</label>
+        <select id="pmCharacter">
+          <option value="">— بدون شخصية —</option>
+        </select>
+        <small style="color:var(--text-dim);font-size:.75rem">لو ربطت المنتج بشخصية، هيظهر لما العميل يضغط على الشخصية في صفحة البحث.</small>
+      </div>
+      <div class="form-group">
         <label>الوصف</label>
         <textarea id="pmDesc" rows="2"></textarea>
       </div>
@@ -932,6 +980,90 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="characterModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <h3 id="chTitle">إضافة شخصية</h3>
+      <button class="btn btn-ghost btn-small" onclick="closeCharacterForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="chId">
+      <div class="form-group">
+        <label>اسم الشخصية (بالعربي) *</label>
+        <input type="text" id="chName" placeholder="مثال: ناروتو">
+      </div>
+      <div class="form-group">
+        <label>المعرّف (Slug) * — بالإنجليزي بدون مسافات</label>
+        <input type="text" id="chSlug" placeholder="مثال: naruto" style="direction:ltr;text-align:left">
+        <small style="color:var(--text-dim);font-size:.75rem">ممنوع تغييره لو في منتجات مربوطة بالشخصية دي.</small>
+      </div>
+      <div class="form-group">
+        <label>صورة الشخصية (اختياري)</label>
+        <div class="img-upload-wrap">
+          <input type="file" id="chImageFile" accept="image/*" style="display:none" onchange="uploadCharacterImage(event)">
+          <label for="chImageFile" style="cursor:pointer;color:var(--gold-2)">📤 اختر صورة من الجهاز</label>
+          <div id="chUploadStatus" style="font-size:.8rem;color:var(--text-dim);margin-top:4px"></div>
+        </div>
+        <input type="text" id="chImage" placeholder="أو ألصق رابط الصورة" style="margin-top:8px">
+        <img id="chImagePreview" style="display:none;width:80px;height:80px;border-radius:50%;object-fit:cover;margin-top:10px;border:2px solid var(--gold-3)">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ترتيب العرض</label>
+          <input type="number" id="chOrder" value="0">
+        </div>
+        <div class="form-group">
+          <label>مفعل</label>
+          <select id="chActive"><option value="true">نعم</option><option value="false">لا</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="saveCharacter()">💾 حفظ الشخصية</button>
+      <button class="btn btn-ghost" onclick="closeCharacterForm()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="phoneModelModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <h3 id="pmmTitle">إضافة موديل موبايل</h3>
+      <button class="btn btn-ghost btn-small" onclick="closePhoneModelForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pmmId">
+      <div class="form-group">
+        <label>البراند *</label>
+        <select id="pmmBrand">
+          <option value="iPhone">iPhone</option>
+          <option value="Samsung">Samsung</option>
+          <option value="Xiaomi">Xiaomi</option>
+          <option value="Oppo">Oppo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>اسم الموديل *</label>
+        <input type="text" id="pmmModelName" placeholder="مثال: iPhone 15 Pro Max">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ترتيب العرض</label>
+          <input type="number" id="pmmOrder" value="0">
+        </div>
+        <div class="form-group">
+          <label>مفعل</label>
+          <select id="pmmActive"><option value="true">نعم</option><option value="false">لا</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="savePhoneModel()">💾 حفظ</button>
+      <button class="btn btn-ghost" onclick="closePhoneModelForm()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -942,7 +1074,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_PW = 'nimda321';
-let products = [], orders = [], settings = {}, categories = [];
+let products = [], orders = [], settings = {}, categories = [], characters = [], phoneModels = [];
 
 // ─── Toast ───
 function toast(msg, type=''){
@@ -985,7 +1117,7 @@ function switchTab(name, btn){
 
 // ─── Load data ───
 async function loadAll(){
-  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadSettings(), loadCoverImages()]);
+  await Promise.all([loadCategories(), loadCharacters(), loadPhoneModels(), loadProducts(), loadOrders(), loadSettings(), loadCoverImages()]);
   updateDashboard();
 }
 
@@ -995,6 +1127,28 @@ async function loadCategories(){
   categories = data || [];
   renderCategories();
   populateCategoryDropdowns();
+}
+
+async function loadCharacters(){
+  const { data, error } = await sb.from('characters').select('*').order('display_order').order('created_at');
+  if (error){
+    console.warn('characters table:', error.message);
+    characters = [];
+  } else {
+    characters = data || [];
+  }
+  renderCharacters();
+  populateCharacterDropdown();
+}
+
+function populateCharacterDropdown(){
+  const pmChar = document.getElementById('pmCharacter');
+  if (!pmChar) return;
+  const current = pmChar.value;
+  pmChar.innerHTML = '<option value="">— بدون شخصية —</option>' +
+    characters.filter(c=>c.active).map(c =>
+      `<option value="${c.slug}">${c.name}</option>`).join('');
+  if (current) pmChar.value = current;
 }
 
 function populateCategoryDropdowns(){
@@ -1128,6 +1282,8 @@ function openProductForm(){
   document.getElementById('pmOrder').value = 0;
   document.getElementById('pmActive').value = 'true';
   document.getElementById('pmMaterial').value = '';
+  const pmChar = document.getElementById('pmCharacter');
+  if (pmChar) pmChar.value = '';
   document.getElementById('pmImage').value = '';
   document.getElementById('pmImagePreview').style.display = 'none';
   document.getElementById('pmUploadStatus').textContent = '';
@@ -1207,6 +1363,8 @@ function editProduct(id){
   document.getElementById('pmOrder').value = p.display_order || 0;
   document.getElementById('pmActive').value = String(p.active);
   document.getElementById('pmMaterial').value = p.material || '';
+  const pmChar = document.getElementById('pmCharacter');
+  if (pmChar) pmChar.value = p.character_slug || '';
   document.getElementById('pmImage').value = p.image_url || '';
   if (p.image_url){
     document.getElementById('pmImagePreview').src = p.image_url;
@@ -1739,6 +1897,7 @@ async function saveProduct(){
     category: document.getElementById('pmCategory').value,
     description: document.getElementById('pmDesc').value.trim(),
     material: document.getElementById('pmMaterial').value.trim() || null,
+    character_slug: (document.getElementById('pmCharacter')?.value || '') || null,
     image_url: document.getElementById('pmImage').value.trim(),
     display_order: Number(document.getElementById('pmOrder').value) || 0,
     active: document.getElementById('pmActive').value === 'true',
@@ -1754,10 +1913,16 @@ async function saveProduct(){
   }
   if (result.error){
     console.error(result.error);
-    // لو عمود material مش موجود في الجدول — أعد المحاولة بدونه
     const errMsg = (result.error.message || '').toLowerCase();
-    if (errMsg.includes('material') || errMsg.includes('column')){
-      delete payload.material;
+    // لو عمود material أو character_slug غير موجود، أعد المحاولة بدونهم
+    if (errMsg.includes('material') || errMsg.includes('character_slug') || errMsg.includes('column')){
+      if (errMsg.includes('character_slug')) delete payload.character_slug;
+      if (errMsg.includes('material')) delete payload.material;
+      // لو لسة فيه مشاكل أعمل cleanup كامل
+      if (errMsg.includes('column') && !errMsg.includes('material') && !errMsg.includes('character_slug')){
+        delete payload.character_slug;
+        delete payload.material;
+      }
       if (id) result = await sb.from('products').update(payload).eq('id', id);
       else    result = await sb.from('products').insert([payload]);
       if (result.error){ toast('فشل الحفظ: ' + result.error.message, 'error'); return; }
@@ -2290,6 +2455,277 @@ async function deleteCategory(id){
 document.getElementById('categoryModal').addEventListener('click', (e)=>{
   if (e.target.id === 'categoryModal') closeCategoryForm();
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// ═══  CHARACTERS  ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+
+function renderCharacters(){
+  const box = document.getElementById('charactersList');
+  if (!box) return;
+  if (!characters.length){
+    box.innerHTML = '<div class="empty-state">لا توجد شخصيات بعد — اضغط "+ إضافة شخصية" لإضافة أول شخصية</div>';
+    return;
+  }
+  box.innerHTML = `
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>#</th><th>الصورة</th><th>الاسم</th><th>Slug</th>
+        <th>عدد المنتجات</th><th>الحالة</th><th>إجراءات</th>
+      </tr></thead>
+      <tbody>
+        ${characters.map(c => {
+          const count = products.filter(p => p.character_slug === c.slug).length;
+          const img = c.image_url
+            ? `<img src="${c.image_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--gold-3)">`
+            : '<div style="width:40px;height:40px;border-radius:50%;background:rgba(212,175,55,.1);display:grid;place-items:center;color:var(--gold-3)">👤</div>';
+          return `
+            <tr>
+              <td>${c.display_order||0}</td>
+              <td>${img}</td>
+              <td><strong style="color:var(--gold-1)">${c.name}</strong></td>
+              <td style="direction:ltr;font-family:monospace;font-size:.8rem">${c.slug}</td>
+              <td>${count}</td>
+              <td>${c.active ? '<span class="badge badge-delivered">مفعل</span>' : '<span class="badge badge-cancelled">غير مفعل</span>'}</td>
+              <td>
+                <button class="btn btn-ghost btn-small" onclick="editCharacter('${c.id}')">✎</button>
+                <button class="btn btn-danger btn-small" onclick="deleteCharacter('${c.id}')" ${count>0?'title="احذف المنتجات أولاً أو فك ربطها"':''}>🗑️</button>
+              </td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+function openCharacterForm(){
+  document.getElementById('chTitle').textContent = 'إضافة شخصية';
+  document.getElementById('chId').value = '';
+  document.getElementById('chName').value = '';
+  document.getElementById('chSlug').value = '';
+  document.getElementById('chSlug').disabled = false;
+  document.getElementById('chImage').value = '';
+  document.getElementById('chImagePreview').style.display = 'none';
+  document.getElementById('chOrder').value = (characters.length + 1);
+  document.getElementById('chActive').value = 'true';
+  document.getElementById('characterModal').classList.add('open');
+}
+
+function editCharacter(id){
+  const c = characters.find(x => String(x.id) === String(id));
+  if (!c) return;
+  document.getElementById('chTitle').textContent = 'تعديل شخصية';
+  document.getElementById('chId').value = c.id;
+  document.getElementById('chName').value = c.name;
+  document.getElementById('chSlug').value = c.slug;
+  const hasProducts = products.some(p => p.character_slug === c.slug);
+  document.getElementById('chSlug').disabled = hasProducts;
+  document.getElementById('chImage').value = c.image_url || '';
+  if (c.image_url){
+    document.getElementById('chImagePreview').src = c.image_url;
+    document.getElementById('chImagePreview').style.display = 'block';
+  } else {
+    document.getElementById('chImagePreview').style.display = 'none';
+  }
+  document.getElementById('chOrder').value = c.display_order || 0;
+  document.getElementById('chActive').value = String(c.active);
+  document.getElementById('characterModal').classList.add('open');
+}
+
+function closeCharacterForm(){
+  document.getElementById('characterModal').classList.remove('open');
+}
+
+async function saveCharacter(){
+  const name = document.getElementById('chName').value.trim();
+  let slug   = document.getElementById('chSlug').value.trim();
+  if (!name){ toast('أدخل اسم الشخصية', 'error'); return; }
+  if (!slug) slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\u0600-\u06FF-]/g,'');
+  if (!slug){ toast('أدخل slug صحيح (أحرف إنجليزية)', 'error'); return; }
+
+  const payload = {
+    name,
+    slug,
+    image_url: document.getElementById('chImage').value.trim() || null,
+    display_order: Number(document.getElementById('chOrder').value) || 0,
+    active: document.getElementById('chActive').value === 'true'
+  };
+
+  const id = document.getElementById('chId').value;
+  let result;
+  if (id){
+    result = await sb.from('characters').update(payload).eq('id', id);
+  } else {
+    result = await sb.from('characters').insert([payload]);
+  }
+  if (result.error){
+    toast('فشل الحفظ: ' + result.error.message, 'error');
+    return;
+  }
+  toast('✓ تم الحفظ', 'success');
+  closeCharacterForm();
+  await loadCharacters();
+}
+
+async function deleteCharacter(id){
+  const c = characters.find(x => String(x.id) === String(id));
+  if (!c) return;
+  const count = products.filter(p => p.character_slug === c.slug).length;
+  if (count > 0){
+    toast(`لا يمكن الحذف — يوجد ${count} منتج مربوط بالشخصية دي. فك ربطهم أولاً`, 'error');
+    return;
+  }
+  if (!confirm(`هل أنت متأكد من حذف شخصية "${c.name}"؟`)) return;
+  const { error } = await sb.from('characters').delete().eq('id', id);
+  if (error){ toast('فشل الحذف', 'error'); return; }
+  toast('✓ تم الحذف', 'success');
+  await loadCharacters();
+}
+
+// رفع صورة الشخصية
+async function uploadCharacterImage(event){
+  const file = event.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('chUploadStatus');
+  status.textContent = '⏳ جاري الرفع...';
+  try {
+    const url = await uploadFile(file, 'characters');
+    document.getElementById('chImage').value = url;
+    document.getElementById('chImagePreview').src = url;
+    document.getElementById('chImagePreview').style.display = 'block';
+    status.textContent = '✓ تم الرفع';
+    setTimeout(()=>status.textContent='', 2000);
+  } catch (err){
+    status.textContent = '✕ فشل الرفع: ' + err.message;
+  }
+}
+
+// Close character modal on backdrop click
+setTimeout(() => {
+  const cm = document.getElementById('characterModal');
+  if (cm) cm.addEventListener('click', (e)=>{
+    if (e.target.id === 'characterModal') closeCharacterForm();
+  });
+}, 100);
+
+// ═══════════════════════════════════════════════════════════════════
+// ═══  PHONE MODELS  ═════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+
+async function loadPhoneModels(){
+  const { data, error } = await sb.from('phone_models')
+    .select('*').order('brand').order('display_order').order('model_name');
+  if (error){
+    console.warn('phone_models table:', error.message);
+    phoneModels = [];
+  } else {
+    phoneModels = data || [];
+  }
+  renderPhoneModels();
+}
+
+function renderPhoneModels(){
+  const box = document.getElementById('phoneModelsList');
+  if (!box) return;
+  const filter = document.getElementById('filterPhoneBrand')?.value || '';
+  const list = filter ? phoneModels.filter(m => m.brand === filter) : phoneModels;
+
+  if (!list.length){
+    box.innerHTML = '<div class="empty-state">لا توجد موديلات بعد — اضغط "+ إضافة موديل"</div>';
+    return;
+  }
+  // اعرضهم مجموعات حسب البراند
+  const brands = [...new Set(list.map(m => m.brand))];
+  box.innerHTML = brands.map(brand => {
+    const models = list.filter(m => m.brand === brand);
+    return `
+      <h4 style="color:var(--gold-1);margin:14px 0 8px;font-family:var(--font-en);letter-spacing:1.5px">${brand} (${models.length})</h4>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>#</th><th>اسم الموديل</th><th>الحالة</th><th>إجراءات</th>
+        </tr></thead>
+        <tbody>
+          ${models.map(m => `
+            <tr>
+              <td>${m.display_order||0}</td>
+              <td>${m.model_name}</td>
+              <td>${m.active ? '<span class="badge badge-delivered">مفعل</span>' : '<span class="badge badge-cancelled">غير مفعل</span>'}</td>
+              <td>
+                <button class="btn btn-ghost btn-small" onclick="editPhoneModel('${m.id}')">✎</button>
+                <button class="btn btn-danger btn-small" onclick="deletePhoneModel('${m.id}')">🗑️</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+  }).join('');
+}
+
+function openPhoneModelForm(){
+  document.getElementById('pmmTitle').textContent = 'إضافة موديل موبايل';
+  document.getElementById('pmmId').value = '';
+  document.getElementById('pmmBrand').value = 'iPhone';
+  document.getElementById('pmmModelName').value = '';
+  document.getElementById('pmmOrder').value = 0;
+  document.getElementById('pmmActive').value = 'true';
+  document.getElementById('phoneModelModal').classList.add('open');
+}
+
+function editPhoneModel(id){
+  const m = phoneModels.find(x => String(x.id) === String(id));
+  if (!m) return;
+  document.getElementById('pmmTitle').textContent = 'تعديل موديل';
+  document.getElementById('pmmId').value = m.id;
+  document.getElementById('pmmBrand').value = m.brand;
+  document.getElementById('pmmModelName').value = m.model_name;
+  document.getElementById('pmmOrder').value = m.display_order || 0;
+  document.getElementById('pmmActive').value = String(m.active);
+  document.getElementById('phoneModelModal').classList.add('open');
+}
+
+function closePhoneModelForm(){
+  document.getElementById('phoneModelModal').classList.remove('open');
+}
+
+async function savePhoneModel(){
+  const brand = document.getElementById('pmmBrand').value;
+  const modelName = document.getElementById('pmmModelName').value.trim();
+  if (!modelName){ toast('أدخل اسم الموديل', 'error'); return; }
+
+  const payload = {
+    brand,
+    model_name: modelName,
+    display_order: Number(document.getElementById('pmmOrder').value) || 0,
+    active: document.getElementById('pmmActive').value === 'true'
+  };
+
+  const id = document.getElementById('pmmId').value;
+  let result;
+  if (id){
+    result = await sb.from('phone_models').update(payload).eq('id', id);
+  } else {
+    result = await sb.from('phone_models').insert([payload]);
+  }
+  if (result.error){ toast('فشل الحفظ: ' + result.error.message, 'error'); return; }
+  toast('✓ تم الحفظ', 'success');
+  closePhoneModelForm();
+  await loadPhoneModels();
+}
+
+async function deletePhoneModel(id){
+  const m = phoneModels.find(x => String(x.id) === String(id));
+  if (!m) return;
+  if (!confirm(`هل أنت متأكد من حذف موديل "${m.model_name}"؟`)) return;
+  const { error } = await sb.from('phone_models').delete().eq('id', id);
+  if (error){ toast('فشل الحذف', 'error'); return; }
+  toast('✓ تم الحذف', 'success');
+  await loadPhoneModels();
+}
+
+setTimeout(() => {
+  const pmm = document.getElementById('phoneModelModal');
+  if (pmm) pmm.addEventListener('click', (e)=>{
+    if (e.target.id === 'phoneModelModal') closePhoneModelForm();
+  });
+}, 100);
 
 // ─── Auto-login if session exists ───
 if (sessionStorage.getItem('steels_admin') === '1') showDash();
