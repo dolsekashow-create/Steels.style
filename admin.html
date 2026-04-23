@@ -807,22 +807,8 @@
         </div>
         <div class="form-group">
           <label>الفئة *</label>
-          <select id="pmCategory" onchange="onCategoryChange()"></select>
+          <select id="pmCategory"></select>
         </div>
-      </div>
-
-      <!-- 🆕 النوع الفرعي + زر تطبيق القالب -->
-      <div class="form-group" id="pmPresetWrap" style="display:none">
-        <label>القالب الجاهز (يملأ الألوان والسعر والمقاسات تلقائياً)</label>
-        <div style="display:flex;gap:8px;align-items:stretch">
-          <select id="pmPreset" style="flex:1"></select>
-          <button type="button" class="btn btn-primary btn-small" onclick="applyPreset()" style="white-space:nowrap">
-            ✨ تطبيق القالب
-          </button>
-        </div>
-        <small style="color:var(--text-dim);font-size:.75rem">
-          اختر القالب المناسب ثم اضغط "تطبيق القالب". تقدر تعدّل أي حاجة بعد كده.
-        </small>
       </div>
       <div class="form-group">
         <label>الوصف</label>
@@ -869,11 +855,11 @@
       </div>
 
       <div class="form-group">
-        <label>الألوان المتاحة — كل لون له سعره، مقاساته، وصورته</label>
+        <label>الأنواع (Variants) — كل نوع له سعره، ألوانه، ومقاساته</label>
         <div class="variants-list" id="variantsList"></div>
         <button class="btn-add-variant" onclick="addVariant()" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          إضافة لون جديد
+          + إضافة نوع/خامة
         </button>
       </div>
     </div>
@@ -1118,257 +1104,7 @@ function renderProducts(){
 let editingProduct = null;
 let currentUploadedImage = '';
 
-// ═══════════════════════════════════════════════════════════════════
-// 🆕 PRODUCT PRESETS — قوالب جاهزة لكل فئة
-// ═══════════════════════════════════════════════════════════════════
-// المفتاح = slug الفئة. لكل فئة مجموعة "أنواع فرعية" جاهزة.
-// كل نوع فرعي بيملأ: name (اسم مقترح) + material + colors + sizes + price.
-// ملاحظة: لو الـ slug بتاعك مختلف، عدّل المفاتيح هنا (مثلاً لو عندك 'blouses'
-// بدل 'tshirts' ضيف alias في الـ categoryAliases تحت).
-
-const PRODUCT_PRESETS = {
-  // ─────────── بلايز (tshirts) ───────────
-  tshirts: [
-    {
-      key: 'blouse-regular',
-      label: 'بلايز عادي',
-      defaultName: 'بلايز',
-      material: 'قطن',
-      price: 65,
-      sizes: ['XS','S','M','L','XL','2XL','3XL'],
-      colors: [
-        { name:'أبيض',  hex:'#f5f5f5' },
-        { name:'أسود',  hex:'#0a0a0a' },
-        { name:'كحلي',  hex:'#1a2c5a' },
-        { name:'سكني',  hex:'#c4a882' }
-      ]
-    },
-    {
-      key: 'blouse-oversize',
-      label: 'بلايز أوفر سايز',
-      defaultName: 'بلايز أوفر سايز',
-      material: 'قطن',
-      price: 75,
-      sizes: ['XS','S','M','L','XL','2XL','3XL'],
-      colors: [
-        { name:'أبيض',  hex:'#f5f5f5' },
-        { name:'أسود',  hex:'#0a0a0a' },
-        { name:'زهري',  hex:'#eaa5b8' },
-        { name:'خمري',  hex:'#5c1e28' },
-        { name:'سكني',  hex:'#c4a882' },
-        { name:'بيج',   hex:'#d4c5a0' }
-      ]
-    },
-    {
-      key: 'blouse-kids',
-      label: 'بلايز أطفال',
-      defaultName: 'بلايز أطفال',
-      material: 'قطن',
-      price: 65,
-      sizes: ['2','4','6','8','10','12','14','16','18'],
-      colors: [
-        { name:'أبيض', hex:'#f5f5f5' },
-        { name:'أسود', hex:'#0a0a0a' }
-      ]
-    }
-  ],
-
-  // ─────────── هوديات (hoodies) ───────────
-  hoodies: [
-    {
-      key: 'hoodie-regular',
-      label: 'هودي',
-      defaultName: 'هودي',
-      material: 'قطن',
-      price: 80,
-      sizes: ['XS','S','M','L','XL','2XL','3XL'],
-      colors: [
-        { name:'أبيض',       hex:'#f5f5f5' },
-        { name:'أسود',       hex:'#0a0a0a' },
-        { name:'زهري',       hex:'#eaa5b8' },
-        { name:'خمري',       hex:'#5c1e28' },
-        { name:'زيتي',       hex:'#6b6a2c' },
-        { name:'سكني',       hex:'#c4a882' },
-        { name:'بيج غامق',   hex:'#a88862' },
-        { name:'كحلي',       hex:'#1a2c5a' }
-      ]
-    },
-    {
-      key: 'hoodie-kids',
-      label: 'هودي أطفال',
-      defaultName: 'هودي أطفال',
-      material: 'قطن',
-      price: 80,
-      sizes: ['2','4','6','8','10','12','14','16','18'],
-      colors: [
-        { name:'أبيض', hex:'#f5f5f5' },
-        { name:'أسود', hex:'#0a0a0a' }
-      ]
-    }
-  ],
-
-  // ─────────── براويز (frames) — كل حجم له سعر ولون واحد "افتراضي" ───────────
-  frames: [
-    {
-      key: 'frame-15x20',  label: 'برواز 15×20',  defaultName: 'برواز 15×20',
-      price: 40,  sizes: ['15×20'],
-      colors: [{ name:'افتراضي', hex:'#8b5a2b' }]
-    },
-    {
-      key: 'frame-21x30',  label: 'برواز 21×30',  defaultName: 'برواز 21×30',
-      price: 70,  sizes: ['21×30'],
-      colors: [{ name:'افتراضي', hex:'#8b5a2b' }]
-    },
-    {
-      key: 'frame-30x40',  label: 'برواز 30×40',  defaultName: 'برواز 30×40',
-      price: 90,  sizes: ['30×40'],
-      colors: [{ name:'افتراضي', hex:'#8b5a2b' }]
-    },
-    {
-      key: 'frame-40x40',  label: 'برواز 40×40',  defaultName: 'برواز 40×40',
-      price: 105, sizes: ['40×40'],
-      colors: [{ name:'افتراضي', hex:'#8b5a2b' }]
-    },
-    {
-      key: 'frame-30x60',  label: 'برواز 30×60',  defaultName: 'برواز 30×60',
-      price: 130, sizes: ['30×60'],
-      colors: [{ name:'افتراضي', hex:'#8b5a2b' }]
-    },
-    {
-      key: 'frame-60x80',  label: 'برواز 60×80',  defaultName: 'برواز 60×80',
-      price: 300, sizes: ['60×80'],
-      colors: [{ name:'افتراضي', hex:'#8b5a2b' }]
-    }
-  ],
-
-  // ─────────── كاب (caps) ───────────
-  caps: [
-    {
-      key: 'cap-summer',
-      label: 'كاب صيفي',
-      defaultName: 'كاب صيفي',
-      material: 'قطن',
-      price: 30,
-      sizes: ['Free Size'],
-      colors: [
-        { name:'أسود',  hex:'#0a0a0a' },
-        { name:'أبيض',  hex:'#f5f5f5' },
-        { name:'كحلي',  hex:'#1a2c5a' },
-        { name:'سكني',  hex:'#c4a882' }
-      ]
-    }
-  ],
-
-  // ─────────── طواقي شتوية (beanies) ───────────
-  beanies: [
-    {
-      key: 'beanie-winter',
-      label: 'طاقية شتوية',
-      defaultName: 'طاقية شتوية',
-      material: 'صوف',
-      price: 45,
-      sizes: ['Free Size'],
-      colors: [
-        { name:'أبيض', hex:'#f5f5f5' },
-        { name:'أسود', hex:'#0a0a0a' }
-      ]
-    }
-  ]
-};
-
-// ─── Aliases: لو الـ slug بتاعك اسمه مختلف بس أنت عاوز نفس الـ presets ───
-// (مثلاً لو فئة "بلايز" عندك slug اسمه 'blouses' بدل 'tshirts')
-const categoryAliases = {
-  'blouses':      'tshirts',
-  'blaises':      'tshirts',
-  'blazes':       'tshirts',
-  'hoodie':       'hoodies',
-  'frame':        'frames',
-  'cap':          'caps',
-  'beanie':       'beanies',
-  'winter-caps':  'beanies',
-  'summer-caps':  'caps'
-};
-
-function getPresetsForCategory(slug){
-  if (!slug) return null;
-  const key = categoryAliases[slug] || slug;
-  return PRODUCT_PRESETS[key] || null;
-}
-
-// ─── عناوين المجموعات في الدروبداون (لأسماء الفئات بالعربي) ───
-const PRESET_GROUP_LABELS = {
-  tshirts: '👕 بلايز',
-  hoodies: '🧥 هوديات',
-  frames:  '🖼️ براويز',
-  caps:    '🧢 كاب',
-  beanies: '🎩 طواقي'
-};
-
-// ─── دور على preset بـ key عبر كل الفئات ───
-function findPresetByKey(key){
-  if (!key) return null;
-  for (const [cat, presets] of Object.entries(PRODUCT_PRESETS)){
-    const found = presets.find(p => p.key === key);
-    if (found) return found;
-  }
-  return null;
-}
-
-// ─── إظهار كل القوالب دايماً (بغض النظر عن الفئة المختارة) ───
-function onCategoryChange(){
-  const wrap = document.getElementById('pmPresetWrap');
-  const select = document.getElementById('pmPreset');
-
-  // ابني الدروبداون بـ optgroups لكل فئة
-  let html = '<option value="">— بدون قالب (إدخال يدوي) —</option>';
-  Object.entries(PRODUCT_PRESETS).forEach(([cat, presets]) => {
-    if (!presets || !presets.length) return;
-    const label = PRESET_GROUP_LABELS[cat] || cat;
-    html += `<optgroup label="${label}">`;
-    presets.forEach(p => {
-      html += `<option value="${p.key}">${p.label} (${p.price} ₪)</option>`;
-    });
-    html += '</optgroup>';
-  });
-
-  select.innerHTML = html;
-  wrap.style.display = '';
-}
-
-// ─── تطبيق القالب على الفورم ───
-function applyPreset(){
-  const key = document.getElementById('pmPreset').value;
-  if (!key){ toast('اختر قالب أولاً', 'error'); return; }
-
-  const preset = findPresetByKey(key);
-  if (!preset){ toast('القالب مش موجود', 'error'); return; }
-
-  // اسم المنتج — لو فاضي، املاه بالاسم الافتراضي. لو فيه اسم، سيبه كما هو.
-  const nameInput = document.getElementById('pmName');
-  if (!nameInput.value.trim() && preset.defaultName){
-    nameInput.value = preset.defaultName;
-  }
-
-  // الخامة
-  if (preset.material){
-    document.getElementById('pmMaterial').value = preset.material;
-  }
-
-  // مسح الألوان الحالية وإضافة ألوان القالب — كل لون = variant
-  document.getElementById('variantsList').innerHTML = '';
-  preset.colors.forEach(color => {
-    addVariant({
-      name:  color.name,
-      hex:   color.hex,
-      price: preset.price,
-      sizes: preset.sizes.slice(),
-      image: ''
-    });
-  });
-
-  toast(`✓ تم تطبيق قالب "${preset.label}"`, 'success');
-}
+// ─── Product form helpers ───
 
 function openProductForm(){
   editingProduct = null;
@@ -1385,7 +1121,6 @@ function openProductForm(){
   document.getElementById('pmImagePreview').style.display = 'none';
   document.getElementById('pmUploadStatus').textContent = '';
   document.getElementById('variantsList').innerHTML = '';
-  onCategoryChange();  // 🆕 املأ دروبداون الـ presets حسب الفئة المختارة
   addVariant(); // start with one empty color row
   document.getElementById('productModal').classList.add('open');
 }
@@ -1457,7 +1192,6 @@ function editProduct(id){
     pmCat.appendChild(opt);
   }
   pmCat.value = p.category;
-  onCategoryChange();  // 🆕 املأ دروبداون الـ presets
   document.getElementById('pmDesc').value = p.description || '';
   document.getElementById('pmOrder').value = p.display_order || 0;
   document.getElementById('pmActive').value = String(p.active);
@@ -1471,10 +1205,47 @@ function editProduct(id){
   }
   document.getElementById('pmUploadStatus').textContent = '';
   document.getElementById('variantsList').innerHTML = '';
-  const normalized = normalizeVariants(p.variants || []);
-  if (normalized.length) normalized.forEach(v => addVariant(v));
+  // التصميم القديم: addVariant يأخذ البنية القديمة {type, price, colors, sizes, image} مباشرة
+  // لو منتج محفوظ بالبنية الجديدة (كل لون = variant مستقل)، نحوّله للشكل القديم
+  const legacy = toLegacyVariants(p.variants || []);
+  if (legacy.length) legacy.forEach(v => addVariant(v));
   else addVariant();
   document.getElementById('productModal').classList.add('open');
+}
+
+// ─── تحويل البنية الجديدة (كل لون = variant) للشكل القديم (نوع + مصفوفة ألوان) ───
+// عشان التصميم القديم يقدر يعرضها. بيجمع الـ variants اللي نفس السعر والمقاسات والنوع في صف واحد.
+function toLegacyVariants(variants){
+  if (!Array.isArray(variants) || !variants.length) return [];
+  // لو البنية قديمة (فيها colors array) — ارجعها زي ما هي
+  if (variants.some(v => Array.isArray(v && v.colors))){
+    return variants.filter(v => v); // clean nulls
+  }
+  // البنية جديدة: كل عنصر له name+hex+price+sizes+image
+  // اجمع اللي لهم نفس (type, price, sizes) في نفس الصف
+  const groups = new Map();
+  variants.forEach(v => {
+    if (!v) return;
+    const key = [v.type||'', v.price||0, (v.sizes||[]).join(',')].join('|');
+    if (!groups.has(key)){
+      groups.set(key, {
+        type:  v.type || '',
+        price: Number(v.price) || 0,
+        sizes: Array.isArray(v.sizes) ? v.sizes.slice() : [],
+        image: v.image || '',  // نأخذ صورة أول variant كصورة عامة
+        colors: []
+      });
+    }
+    const g = groups.get(key);
+    if (v.name){
+      g.colors.push({
+        name:  v.name,
+        hex:   v.hex   || '#888888',
+        image: v.image || ''
+      });
+    }
+  });
+  return [...groups.values()];
 }
 
 function closeProductForm(){
@@ -1485,33 +1256,8 @@ function toggleVariantType(){
   // legacy stub - kept for safety (no callers after refactor)
 }
 
-// ─── تحديث عنوان الصف + نقطة اللون في الـ header بعد تغيير اللون ───
-function refreshVariantRowHeader(row){
-  const nameEl = row.querySelector('[data-f="colorName"]');
-  const hexEl  = row.querySelector('[data-f="colorHex"]');
-  const dot    = row.querySelector('h4 .color-dot-preview');
-  const title  = row.querySelector('h4 .variant-title-name');
-  const pickBtnDot  = row.querySelector('.btn-pick-color .preview-dot');
-  const pickBtnName = row.querySelector('.btn-pick-color .color-name-txt');
-  const name = nameEl ? nameEl.value.trim() : '';
-  const hex  = hexEl  ? (hexEl.value.trim() || '#888888') : '#888888';
-  if (dot) dot.style.background = hex || '#888888';
-  if (title) title.textContent = name ? `— ${name}` : '';
-  if (pickBtnDot) pickBtnDot.style.background = hex || '#888888';
-  if (pickBtnName) pickBtnName.textContent = name || 'اضغط لاختيار اللون';
-}
-
-// ─── ترقيم الصفوف بعد أي إضافة/حذف ───
-function renumberVariantRows(){
-  document.querySelectorAll('#variantsList .variant-row').forEach((row, i) => {
-    const idxEl = row.querySelector('.variant-idx');
-    if (idxEl) idxEl.textContent = '#' + (i+1);
-    row.dataset.idx = i;
-  });
-}
-
-// ─── إضافة صف لون جديد ───
-// data = {name, hex, price, sizes:[...], image}
+// ─── إضافة صف نوع/خامة (التصميم القديم) ───
+// data = {type, price, colors:[{name,hex,image}], sizes:[], image}
 function addVariant(data = {}){
   const list = document.getElementById('variantsList');
   const idx = list.children.length;
@@ -1519,91 +1265,172 @@ function addVariant(data = {}){
   row.className = 'variant-row';
   row.dataset.idx = idx;
 
-  const name  = data.name  || '';
-  const hex   = data.hex   || (ADMIN_COLOR_MAP[name] || '#888888');
-  const price = Number(data.price) || 0;
-  const sizes = Array.isArray(data.sizes) ? data.sizes : [];
-  const image = data.image || '';
+  // بناء الألوان الموجودة — كل لون ممكن يكون string (قديم جداً) أو {name,hex,image}
+  const existingColors = (data.colors||[]).map(c => {
+    if (typeof c === 'object' && c.name) return c;
+    return { name: c, hex: ADMIN_COLOR_MAP[c] || '#888888', image: '' };
+  });
+
+  const colorTagsHtml = existingColors.map(c =>
+    `<span class="color-tag" data-name="${(c.name||'').replace(/"/g,'&quot;')}" data-hex="${c.hex||'#888888'}" data-image="${c.image||''}">
+      <span class="color-tag-dot" style="background:${c.hex||'#888888'}"></span>
+      ${c.name||''}
+      ${c.image ? '<span class="color-has-img" title="عنده صورة">🖼</span>' : ''}
+      <button type="button" class="btn-color-img" onclick="uploadColorImage(this)" title="رفع صورة للون">📷</button>
+      <button type="button" class="color-tag-remove" onclick="removeColorTag(this)">×</button>
+    </span>`
+  ).join('');
 
   row.innerHTML = `
-    <button class="remove-variant" type="button" onclick="removeVariantRow(this)" title="حذف اللون">✕</button>
-    <h4>
-      <span class="color-dot-preview" style="background:${hex}"></span>
-      اللون <span class="variant-idx">#${idx+1}</span>
-      <span class="variant-title-name" style="color:var(--text);font-weight:600">${name?'— '+name:''}</span>
-    </h4>
-
-    <!-- hidden inputs لحفظ اللون -->
-    <input type="hidden" data-f="colorName" value="${name.replace(/"/g,'&quot;')}">
-    <input type="hidden" data-f="colorHex"  value="${hex}">
-
+    <button class="remove-variant" type="button" onclick="this.parentElement.remove()" title="حذف">✕</button>
+    <h4>النوع / الخامة #${idx+1}</h4>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>اسم النوع (اختياري — للتيشرتات: عادية/أوفر سايز/لايكرا)</label>
+        <input type="text" data-f="type" value="${(data.type||'').replace(/"/g,'&quot;')}" placeholder="مثال: عادية">
+      </div>
+      <div class="form-group">
+        <label>السعر (شيقل) *</label>
+        <input type="number" data-f="price" value="${data.price||0}" min="0" step="1">
+      </div>
+    </div>
     <div class="form-group">
-      <label>اللون *</label>
-      <div class="color-picker-wrap">
-        <button type="button" class="btn-pick-color" onclick="openColorPicker(this)">
-          <span class="preview-dot" style="background:${hex}"></span>
-          <span class="color-name-txt">${name || 'اضغط لاختيار اللون'}</span>
-          <span class="chev">▼</span>
+      <label>الألوان (اكتب ثم Enter)</label>
+      <div class="color-picker-wrap" data-f="colors">
+        <div class="color-tags">${colorTagsHtml}</div>
+        <button type="button" class="btn-open-picker" onclick="openColorPicker(this)">
+          <span class="preview-dot" style="background:#e63946"></span>
+          + إضافة لون
         </button>
         <div class="picker-popup">
           <canvas class="picker-spectrum" width="248" height="160"></canvas>
           <div class="picker-spectrum-overlay" style="position:relative;margin-bottom:12px"></div>
           <div class="picker-hue"><div class="hue-cursor" style="left:0%"></div></div>
           <div class="picker-inputs">
-            <input type="text" class="picker-name" placeholder="اسم اللون (عربي)" value="${name.replace(/"/g,'&quot;')}">
-            <input type="text" class="picker-hex" placeholder="#HEX" value="${hex}" maxlength="7">
+            <input type="text" class="picker-name" placeholder="اسم اللون (عربي)" value="">
+            <input type="text" class="picker-hex" placeholder="#HEX" value="#e63946" maxlength="7">
           </div>
           <div class="picker-bottom">
-            <div class="picker-preview" style="background:${hex}"></div>
-            <button type="button" class="btn-add-color" onclick="applyColorToRow(this)">✔ تأكيد اللون</button>
+            <div class="picker-preview" style="background:#e63946"></div>
+            <button type="button" class="btn-add-color" onclick="addColorFromPicker(this)">✔ إضافة اللون</button>
           </div>
         </div>
       </div>
     </div>
-
-    <div class="form-grid">
-      <div class="form-group">
-        <label>السعر (شيقل) *</label>
-        <input type="number" data-f="price" value="${price}" min="0" step="1">
-      </div>
-      <div class="form-group">
-        <label>المقاسات (اكتب ثم Enter)</label>
-        <div class="tag-input" data-f="sizes">
-          ${sizes.map(s=>`<span class="tag">${s}<button type="button" onclick="this.parentElement.remove()">×</button></span>`).join('')}
-          <input type="text" placeholder="S, M, L..." onkeydown="handleTagInput(event)">
-        </div>
+    <div class="form-group">
+      <label>المقاسات (اكتب ثم Enter) — اتركها فارغة لمنتجات بدون مقاس</label>
+      <div class="tag-input" data-f="sizes">
+        ${(data.sizes||[]).map(s=>`<span class="tag">${s}<button type="button" onclick="this.parentElement.remove()">×</button></span>`).join('')}
+        <input type="text" placeholder="اضغط Enter لإضافة مقاس" onkeydown="handleTagInput(event)">
       </div>
     </div>
-
     <div class="form-group" style="margin-bottom:0">
-      <label>صورة هذا اللون (اختياري)</label>
+      <label>صورة النوع/الخامة العامة (اختياري — تستخدم لو اللون مالوش صورة)</label>
       <div class="variant-img-wrap" onclick="triggerVariantImgUpload(this)">
         <input type="file" accept="image/*" style="display:none" onchange="uploadVariantImage(event, this.closest('.variant-row'))">
         <label class="variant-img-label" style="pointer-events:none">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
           اختر صورة من الجهاز
         </label>
-        <img class="variant-img-preview" src="${image}" alt="" style="${image?'':'display:none'}">
+        <img class="variant-img-preview" src="${data.image||''}" alt="" style="${data.image?'':'display:none'}">
         <div class="variant-img-status"></div>
       </div>
-      <input type="text" data-f="variantImage" value="${image}" placeholder="أو ألصق رابط صورة" style="margin-top:7px" oninput="syncVariantImgPreview(this)">
+      <input type="text" data-f="variantImage" value="${data.image||''}" placeholder="أو ألصق رابط صورة" style="margin-top:7px" oninput="syncVariantImgPreview(this)">
     </div>
   `;
   list.appendChild(row);
 
   // تهيئة الـ picker في الـ row الجديد
   initPickerInRow(row);
-  refreshVariantRowHeader(row);
 }
 
-function removeVariantRow(btn){
-  const row = btn.closest('.variant-row');
-  if (!row) return;
-  const list = row.parentElement;
-  row.remove();
-  renumberVariantRows();
-  // لو مفيش ولا لون متبقي — أضف صف فاضي تلقائياً
-  if (list && !list.children.length) addVariant();
+// ─── إضافة لون من الـ picker كـ tag ───
+function addColorFromPicker(btn){
+  const popup = btn.closest('.picker-popup');
+  const wrap  = btn.closest('.color-picker-wrap');
+  const p     = wrap._picker;
+  const hex   = p.hexInput.value.trim() || '#888888';
+  const name  = p.nameInput.value.trim();
+
+  if (!name){
+    p.nameInput.focus();
+    p.nameInput.style.borderColor = 'var(--danger)';
+    toast('أدخل اسم اللون', 'error');
+    return;
+  }
+  p.nameInput.style.borderColor = '';
+
+  // تحقق من عدم تكرار اللون في نفس الصف
+  const tagsWrap = wrap.querySelector('.color-tags');
+  const existing = [...tagsWrap.querySelectorAll('.color-tag')].find(
+    t => t.dataset.name === name
+  );
+  if (existing){
+    toast('اللون ده موجود بالفعل', 'error');
+    return;
+  }
+
+  const tag = document.createElement('span');
+  tag.className = 'color-tag';
+  tag.dataset.name  = name;
+  tag.dataset.hex   = hex;
+  tag.dataset.image = '';
+  tag.innerHTML = `
+    <span class="color-tag-dot" style="background:${hex}"></span>
+    ${name}
+    <button type="button" class="btn-color-img" onclick="uploadColorImage(this)" title="رفع صورة للون">📷</button>
+    <button type="button" class="color-tag-remove" onclick="removeColorTag(this)">×</button>`;
+  tagsWrap.appendChild(tag);
+
+  p.nameInput.value = '';
+  popup.classList.remove('open');
+  _activePicker = null;
+}
+
+// ─── حذف tag لون ───
+function removeColorTag(btn){
+  btn.closest('.color-tag').remove();
+}
+
+// ─── رفع صورة لكل لون (بيظهر 🖼 بعد الرفع) ───
+async function uploadColorImage(btn){
+  const tag = btn.closest('.color-tag');
+  if (!tag) return;
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    input.remove();
+    if (!file) return;
+
+    btn.textContent = '⏳';
+    btn.disabled = true;
+    try {
+      const url = await uploadFile(file, 'products');
+      tag.dataset.image = url;
+      const existingIcon = tag.querySelector('.color-has-img');
+      if (existingIcon) existingIcon.remove();
+      const icon = document.createElement('span');
+      icon.className = 'color-has-img';
+      icon.title = url;
+      icon.textContent = '🖼';
+      tag.insertBefore(icon, btn);
+      btn.textContent = '📷';
+      btn.disabled = false;
+      toast('✓ تم رفع صورة اللون', 'success');
+    } catch(err){
+      btn.textContent = '📷';
+      btn.disabled = false;
+      toast('✕ فشل رفع الصورة', 'error');
+    }
+  };
+
+  input.click();
 }
 
 // ─── Admin color map (للـ backward compat مع ألوان قديمة) ───
@@ -1776,7 +1603,6 @@ function initPickerInRow(row){
 function openColorPicker(btn){
   const wrap  = btn.closest('.color-picker-wrap');
   const popup = wrap.querySelector('.picker-popup');
-  const row   = btn.closest('.variant-row');
 
   // إغلاق أي picker تاني
   if (_activePicker && _activePicker !== popup){
@@ -1787,15 +1613,12 @@ function openColorPicker(btn){
 
   if (popup.classList.contains('open')){
     const p = wrap._picker;
-    // اقرأ اللون/الاسم الحاليين من hidden inputs للصف
-    const currentHex  = row ? (row.querySelector('[data-f="colorHex"]').value  || '#e63946') : '#e63946';
-    const currentName = row ? (row.querySelector('[data-f="colorName"]').value || '') : '';
-    p.nameInput.value = currentName;
-    p.hexInput.value  = currentHex;
-    // أول مرة يفتح: ارسم الـ spectrum وsync الحالة من الـ hex الحالي
+    // ابدأ من أحمر افتراضي، عشان المستخدم يبدأ لون جديد نظيف
+    p.nameInput.value = '';
+    p.hexInput.value  = '#e63946';
     setTimeout(()=>{
       p.drawSpectrum();
-      if (!p.syncFromHex(currentHex)){
+      if (!p.syncFromHex('#e63946')){
         p.positionSpecCursor();
         p.syncFromHsv();
       }
@@ -1810,33 +1633,6 @@ document.addEventListener('click', e=>{
     _activePicker = null;
   }
 });
-
-// ─── تطبيق اللون المختار على الصف (بدل addColorFromPicker القديمة) ───
-function applyColorToRow(btn){
-  const popup = btn.closest('.picker-popup');
-  const wrap  = btn.closest('.color-picker-wrap');
-  const row   = btn.closest('.variant-row');
-  const p     = wrap._picker;
-  const hex   = p.hexInput.value.trim() || '#888888';
-  const name  = p.nameInput.value.trim();
-
-  if (!name){
-    p.nameInput.focus();
-    p.nameInput.style.borderColor = 'var(--danger)';
-    toast('أدخل اسم اللون', 'error');
-    return;
-  }
-  p.nameInput.style.borderColor = '';
-
-  // خزّن في الـ hidden inputs للصف
-  row.querySelector('[data-f="colorName"]').value = name;
-  row.querySelector('[data-f="colorHex"]').value  = hex;
-
-  refreshVariantRowHeader(row);
-
-  popup.classList.remove('open');
-  _activePicker = null;
-}
 
 function triggerVariantImgUpload(wrap){
   wrap.querySelector('input[type="file"]').click();
@@ -1893,16 +1689,21 @@ function collectVariants(){
   const rows = document.querySelectorAll('#variantsList .variant-row');
   const variants = [];
   rows.forEach(row => {
-    const name  = (row.querySelector('[data-f="colorName"]').value || '').trim();
-    const hex   = (row.querySelector('[data-f="colorHex"]').value  || '#888888').trim();
+    const type  = (row.querySelector('[data-f="type"]').value || '').trim();
     const price = Number(row.querySelector('[data-f="price"]').value) || 0;
+    // اجمع الألوان من الـ tags: {name, hex, image}
+    const colors = [...row.querySelectorAll('[data-f="colors"] .color-tag')].map(tag => ({
+      name:  tag.dataset.name  || '',
+      hex:   tag.dataset.hex   || '#888888',
+      image: tag.dataset.image || ''
+    }));
     const sizes = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
     const imgInput = row.querySelector('[data-f="variantImage"]');
-    const image = imgInput ? imgInput.value.trim() : '';
+    const variantImage = imgInput ? imgInput.value.trim() : '';
 
-    // لا نتجاهل صف فاضي الاسم — هنعمله validate في saveProduct
-    const v = { name, hex, price, sizes };
-    if (image) v.image = image;
+    const v = { price, colors, sizes };
+    if (type) v.type = type;
+    if (variantImage) v.image = variantImage;
     variants.push(v);
   });
   return variants;
@@ -1913,20 +1714,14 @@ async function saveProduct(){
   if (!name){ toast('أدخل اسم المنتج', 'error'); return; }
 
   const variants = collectVariants();
-  if (!variants.length){ toast('أضف لون واحد على الأقل', 'error'); return; }
+  if (!variants.length){ toast('أضف نوع واحد على الأقل', 'error'); return; }
 
-  // Validation: كل لون لازم له اسم وسعر > 0 ومقاس واحد على الأقل
+  // Validation: كل نوع لازم له سعر > 0
   for (let i = 0; i < variants.length; i++){
     const v = variants[i];
-    if (!v.name){ toast(`اللون #${i+1}: اختر اللون أولاً`, 'error'); return; }
-    if (!v.price || v.price <= 0){ toast(`اللون #${i+1} (${v.name}): أدخل سعر صحيح`, 'error'); return; }
-    if (!v.sizes || !v.sizes.length){ toast(`اللون #${i+1} (${v.name}): أضف مقاس واحد على الأقل`, 'error'); return; }
+    const label = v.type || `النوع #${i+1}`;
+    if (!v.price || v.price <= 0){ toast(`${label}: أدخل سعر صحيح`, 'error'); return; }
   }
-
-  // تحقق من عدم تكرار اسم اللون
-  const names = variants.map(v => v.name);
-  const dup = names.find((n,i) => names.indexOf(n) !== i);
-  if (dup){ toast(`اللون "${dup}" مكرر — كل لون لازم اسم مختلف`, 'error'); return; }
 
   const payload = {
     name,
