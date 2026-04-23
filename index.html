@@ -68,8 +68,6 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.83 0 0 0 0 0.69 0 0 0 0 0.22 0 0 0 0.15 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
   main, header, footer, section, .floating-nav{position:relative;z-index:3}
-  body.section-focus main{z-index:5 !important}
-  body.section-focus .section-back-btn, body.section-focus .focus-cart-btn{z-index:10 !important}
 
   ::selection{background:var(--gold-2);color:#000}
 
@@ -1963,7 +1961,7 @@ function buildSection(id, title, subtitle, items, brandFilter){
     : visibleItems.map(p => renderCard(p, brandFilter)).join('') +
       (hiddenItems.length ? `<div class="hidden-products" style="display:contents">${hiddenItems.map(p => renderCard(p, brandFilter)).join('')}</div>` : '');
   const showMorePill = hasMore
-    ? `<button class="show-more-pill" onclick="toggleSection(this)" data-more="عرض المزيد ←" data-less="عرض أقل ←">عرض المزيد ←</button>`
+    ? `<a class="show-more-pill" href="section.html?cat=${id}" style="text-decoration:none;display:inline-block">عرض المزيد ←</a>`
     : '';
   return `
     <section class="category" id="${id}" data-brand-filter="${brandFilter||''}">
@@ -2030,7 +2028,6 @@ function toggleSection(btn){
 
   // ادخل وضع التركيز: إخفاء كل الأقسام التانية
   document.body.classList.add('section-focus');
-  document.getElementById('whiteBg').style.display = 'block';
   document.querySelectorAll('main section').forEach(s => {
     s.classList.toggle('focused-section', s === section);
   });
@@ -2053,7 +2050,6 @@ function toggleSection(btn){
 // ─── الخروج من وضع التركيز والرجوع لكل الأقسام ───
 function exitSectionFocus(){
   document.body.classList.remove('section-focus');
-  document.getElementById('whiteBg').style.display = 'none';
   document.querySelectorAll('main section').forEach(s => s.classList.remove('focused-section'));
   document.querySelectorAll('.section-hidden').forEach(el => el.classList.remove('section-hidden'));
 
@@ -3221,15 +3217,5 @@ updateCartBadge();
     </div>
   </div>
 </div>
-
-<!-- ═════════ WHITE OVERLAY للـ section-focus ═════════ -->
-<div id="whiteBg" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:#ffffff;
-  z-index:2;
-  pointer-events:none;
-"></div>
 </body>
 </html>
