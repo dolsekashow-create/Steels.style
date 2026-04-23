@@ -547,7 +547,7 @@
     .cover-add-btn{font-size:.8rem;padding:9px}
   }
 
-  /* ───── زر عرض المزيد على الكارد ───── */
+  /* ───── زر عرض المزيد على الكارد (يفتح صفحة القسم) ───── */
   .btn-more-desc{
     display:flex;align-items:center;justify-content:center;gap:6px;
     width:100%;padding:8px 12px;
@@ -557,6 +557,7 @@
     cursor:pointer;letter-spacing:.3px;
     transition:all .2s;
     box-shadow:0 3px 12px -3px rgba(212,175,55,.4);
+    text-decoration:none;
   }
   .btn-more-desc:hover{
     box-shadow:0 6px 20px -4px rgba(212,175,55,.6);
@@ -1836,18 +1837,14 @@ const VISIBLE_PER_SECTION = 6;
 const COVER_BRANDS = ['iPhone','Samsung','Xiaomi','Oppo'];
 
 function buildSection(id, title, subtitle, items, brandFilter){
-  // بنعرض أول 6 منتجات بس على الصفحة الرئيسية. الباقي يظهر في صفحة القسم (section.html).
+  // بنعرض أول 6 منتجات بس على الصفحة الرئيسية.
+  // كل كارد عنده زر "عرض المزيد" اللي يفتح صفحة القسم (section.html).
   const visibleItems = items.slice(0, VISIBLE_PER_SECTION);
   const grid = !items.length
     ? '<p style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:30px">لا توجد منتجات في هذا القسم حالياً</p>'
     : visibleItems.map(p => renderCard(p, brandFilter)).join('');
-  // زر "عرض المزيد" يظهر دايماً طول ما في منتجات — يفتح صفحة القسم المنفصلة
-  const showMorePill = items.length
-    ? `<a class="show-more-pill" href="section.html?cat=${encodeURIComponent(id)}">عرض المزيد ←</a>`
-    : '';
   return `
     <section class="category" id="${id}" data-brand-filter="${brandFilter||''}">
-      ${showMorePill}
       <div class="container">
         <div class="section-head">
           <h2 class="gold-text">${title}</h2>
@@ -2013,11 +2010,10 @@ function renderCard(p){
       <div class="product-body">
         <div class="product-name">${p.name}</div>
         ${p.material ? `<span class="material-badge">${p.material}</span>` : ''}
-        ${p.description ? `
-        <button class="btn-more-desc" onclick="openDescModal(event,'${p.id}')">
+        <a class="btn-more-desc" href="section.html?cat=${encodeURIComponent(p.category||'')}">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
           عرض المزيد
-        </button>` : ''}
+        </a>
 
         ${variantSelectorHtml}
 
