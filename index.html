@@ -791,6 +791,38 @@
   .hidden-products{display:none}
   .expanded .hidden-products{display:contents}
 
+  /* 🆕 وضع تركيز القسم: إخفاء كل الأقسام عدا المُختار */
+  body.section-focus main section:not(.focused-section){display:none}
+  body.section-focus .section-hidden{display:none !important}
+  body.section-focus main section.focused-section{
+    animation:sectionFocusIn .4s ease;
+  }
+  @keyframes sectionFocusIn{
+    from{opacity:0;transform:translateY(10px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+
+  /* زر الرجوع العائم */
+  .section-back-btn{
+    position:fixed;top:92px;right:16px;z-index:55;
+    display:flex;align-items:center;gap:7px;
+    padding:10px 16px;border-radius:24px;
+    background:linear-gradient(135deg,var(--gold-1),var(--gold-2),var(--gold-3));
+    color:#000;font-weight:800;font-family:var(--font-ar);font-size:.88rem;
+    border:none;cursor:pointer;
+    box-shadow:0 6px 22px -2px rgba(212,175,55,.55);
+    opacity:0;visibility:hidden;transform:translateY(-10px);
+    transition:opacity .25s, transform .25s, visibility .25s;
+  }
+  .section-back-btn.visible{opacity:1;visibility:visible;transform:translateY(0)}
+  .section-back-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 10px 28px -2px rgba(212,175,55,.7)}
+  .section-back-btn:active{transform:translateY(0) scale(.97)}
+  .section-back-btn svg{flex-shrink:0}
+  @media (max-width: 768px){
+    .section-back-btn{top:82px;right:10px;padding:8px 14px;font-size:.82rem}
+    .section-back-btn svg{width:17px;height:17px}
+  }
+
   /* Delivery fee row in cart */
   .delivery-fee-row{color:var(--gold-1) !important;font-weight:700}
 
@@ -960,11 +992,18 @@
 
   /* ───── Responsive ───── */
   @media (max-width: 768px){
-    .nav-wrap{padding:10px 14px;gap:10px}
-    .nav-brand-text{font-size:.78rem;letter-spacing:1.5px}
-    .nav-brand-text small{font-size:.56rem;letter-spacing:2px;margin-top:2px}
-    .nav-brand img{width:38px;height:38px}
+    .nav-wrap{padding:10px 12px;gap:8px}
+    .nav-brand-text{font-size:.72rem;letter-spacing:1.5px}
+    .nav-brand-text small{font-size:.54rem;letter-spacing:2px;margin-top:2px}
+    .nav-brand img{width:36px;height:36px}
     .nav-wrap nav{gap:0}
+
+    /* 🆕 على الموبايل: روابط النص (الرئيسية/الأقسام/تواصل) تتخفي من الشريط،
+       وأيقونات البحث والسلة تبقى دايماً ظاهرة + زر الهامبرجر للقائمة الكاملة */
+    nav ul > li:not(.mobile-icon-always){display:none}
+    nav ul.open > li{display:block !important}
+    nav ul.open > li.mobile-icon-always{display:none !important}
+
     nav ul{
       position:fixed;top:62px;left:0;right:0;
       background:rgba(11,11,11,.98);
@@ -994,8 +1033,81 @@
     }
     .has-dropdown.open .dropdown{display:flex}
     .dropdown a{padding:12px 28px;font-size:.88rem;border-bottom:1px solid rgba(212,175,55,.06)}
+
+    /* 🆕 الأيقونات الظاهرة دايماً على الموبايل */
+    .mobile-icons-bar{
+      display:flex;align-items:center;gap:6px;
+    }
+    .mobile-icon-btn{
+      position:relative;
+      width:38px;height:38px;border-radius:8px;
+      background:rgba(212,175,55,.08);border:1px solid var(--gold-3);
+      color:var(--gold-1);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;flex-shrink:0;
+      transition:all .2s;
+    }
+    .mobile-icon-btn:hover,.mobile-icon-btn:active{
+      background:rgba(212,175,55,.18);
+    }
+    .mobile-icon-btn svg{width:18px;height:18px}
+    .mobile-icon-btn .count-badge{
+      position:absolute;top:-4px;left:-4px;
+      min-width:18px;height:18px;padding:0 4px;
+      background:#c04040;color:#fff;border-radius:10px;
+      font-size:.7rem;font-weight:900;font-family:var(--font-en);
+      display:flex;align-items:center;justify-content:center;
+    }
     .mobile-toggle{display:flex}
+
     .hero{min-height:auto;padding:90px 12px 40px}
+    .hero-logo{width:min(260px, 62vw);margin-bottom:20px}
+    .hero h1{font-size:clamp(1.6rem, 6vw, 2.6rem);letter-spacing:3px}
+    .hero-sub{font-size:.88rem;padding:0 10px}
+    .btn-hero{padding:13px 30px !important;font-size:1rem !important}
+    .hero-categories{gap:7px;margin-top:26px}
+    .cat-pill{padding:8px 16px;font-size:.82rem}
+    section.category{padding:40px 10px 20px}
+    .section-head{margin-bottom:26px}
+    .section-head h2{font-size:1.6rem}
+    .section-head p{font-size:.85rem}
+    .show-more-pill{
+      position:static;display:block;margin:14px auto 0;width:fit-content;
+      padding:8px 18px;font-size:.85rem;
+    }
+    .product-grid{grid-template-columns:repeat(2, 1fr);gap:12px}
+    .product-card{border-radius:10px}
+    .product-body{padding:11px;gap:8px}
+    .product-name{font-size:.82rem;letter-spacing:0}
+    .product-body select{padding:7px 9px;font-size:.8rem}
+    .color-swatch{width:22px;height:22px}
+    .color-swatch::after{display:none}
+    .price-tag{padding:6px}
+    .price-tag .num{font-size:1.05rem}
+    .price-tag .cur{font-size:.75rem}
+    .add-cart-btn{padding:9px 6px;font-size:.78rem;gap:5px}
+    .add-cart-btn svg{width:15px;height:15px}
+    .field-label{font-size:.7rem;margin-bottom:3px}
+    .floating-nav{left:10px;bottom:10px;gap:7px}
+    .fab{width:42px;height:42px;font-size:1rem}
+    .fab-tooltip{display:none}
+    .scroll-top{bottom:10px;left:62px;width:52px;height:52px;font-size:1.4rem}
+    .form-row{grid-template-columns:1fr}
+    .modal{max-width:calc(100vw - 20px);border-radius:10px}
+    .modal-head{padding:14px 16px}
+    .modal-head h3{font-size:1.1rem}
+    .modal-body{padding:16px}
+    .modal-foot{padding:14px 16px}
+    .cart-item{grid-template-columns:50px 1fr;gap:10px}
+    .cart-item-controls{grid-column:1 / -1;justify-content:space-between;padding-top:6px;border-top:1px solid var(--line)}
+    .divider{margin:18px auto 12px;max-width:260px}
+    footer{padding:40px 16px 90px}
+    footer img{width:70px;height:70px}
+  }
+  /* Desktop: hide the mobile icons bar */
+  @media (min-width: 769px){
+    .mobile-icons-bar{display:none}
+  }
     .hero-logo{width:min(260px, 62vw);margin-bottom:20px}
     .hero h1{font-size:clamp(1.6rem, 6vw, 2.6rem);letter-spacing:3px}
     .hero-sub{font-size:.88rem;padding:0 10px}
@@ -1193,6 +1305,17 @@
             بحث
           </button>
         </li>
+      </ul>
+      <!-- 🆕 أيقونات ظاهرة دايماً على الموبايل بجوار الهامبرجر -->
+      <div class="mobile-icons-bar">
+        <button class="mobile-icon-btn" onclick="openSearch()" aria-label="بحث">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        </button>
+        <button class="mobile-icon-btn" onclick="openCart()" aria-label="سلة التسوق">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.6-1.4 2.4c-.2.3-.2.7 0 1 .2.3.5.5.9.5h12v-2H7.4l1-2h7c.8 0 1.4-.4 1.7-1l3.5-6.3c.2-.3.2-.7 0-1-.2-.3-.6-.5-1-.5H5.2l-1-2H1zm16 15c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          <span class="count-badge" id="navIconCartBadge" style="display:none">0</span>
+        </button>
+      </div>
       <button class="mobile-toggle" aria-label="Menu" onclick="toggleMobileMenu(event)">☰</button>
     </nav>
   </div>
@@ -1558,13 +1681,41 @@ function performSearch(){
   // فلتر حسب القسم
   if (activeSearchCat) results = results.filter(p => p.category === activeSearchCat);
 
-  // فلتر حسب نص البحث
+  // فلتر حسب نص البحث — بيبحث في: الاسم، الوصف، الخامة، التاجات،
+  // اسم القسم، أسماء الأنواع (variants.type)، وأسماء الألوان.
   if (q){
     results = results.filter(p => {
-      const name = (p.name || '').toLowerCase();
-      const desc = (p.description || '').toLowerCase();
-      const tags = (Array.isArray(p.tags) ? p.tags.join(' ') : (p.tags||'')).toLowerCase();
-      return name.includes(q) || desc.includes(q) || tags.includes(q);
+      // 1) النصوص الأساسية
+      const haystack = [
+        p.name || '',
+        p.description || '',
+        p.material || '',
+        (Array.isArray(p.tags) ? p.tags.join(' ') : (p.tags||'')),
+      ].join(' ').toLowerCase();
+      if (haystack.includes(q)) return true;
+
+      // 2) اسم القسم
+      const cat = (categories || []).find(c => c.slug === p.category);
+      if (cat && ((cat.name||'').toLowerCase().includes(q) ||
+                  (cat.slug||'').toLowerCase().includes(q))){
+        return true;
+      }
+
+      // 3) أنواع المنتج (variant.type) وألوانه — بيدعم البنيتين القديمة والجديدة
+      const variants = Array.isArray(p.variants) ? p.variants : [];
+      for (const v of variants){
+        if (!v) continue;
+        if ((v.type||'').toLowerCase().includes(q)) return true;
+        // البنية الجديدة: v.name هو اسم اللون
+        if ((v.name||'').toLowerCase().includes(q)) return true;
+        // البنية القديمة: v.colors مصفوفة
+        const colors = Array.isArray(v.colors) ? v.colors : [];
+        for (const c of colors){
+          const cname = typeof c === 'object' ? (c.name||'') : String(c||'');
+          if (cname.toLowerCase().includes(q)) return true;
+        }
+      }
+      return false;
     });
   }
 
@@ -1679,15 +1830,94 @@ function renderAll(){
   });
 }
 
-// ─── Toggle show more / show less ───
+// ─── Toggle: اظهار كل المنتجات في القسم + تركيز على القسم (إخفاء باقي الموقع) ───
 function toggleSection(btn){
   const section = btn.closest('section');
+  if (!section) return;
+
+  // لو القسم الحالي بالفعل في وضع "تركيز" — اخرج منه
+  if (document.body.classList.contains('section-focus') &&
+      section.classList.contains('focused-section')){
+    exitSectionFocus();
+    return;
+  }
+
+  // اعرض كل المنتجات المخفية في القسم ده
   const hidden = section.querySelector('.hidden-products');
-  if (!hidden) return;
-  const isOpen = hidden.style.display !== 'none';
-  hidden.style.display = isOpen ? 'none' : 'contents';
-  btn.textContent = isOpen ? btn.dataset.more : btn.dataset.less;
+  if (hidden) hidden.style.display = 'contents';
+
+  // ادخل وضع التركيز: إخفاء كل الأقسام التانية
+  document.body.classList.add('section-focus');
+  document.querySelectorAll('main section').forEach(s => {
+    s.classList.toggle('focused-section', s === section);
+  });
+
+  // اخفي الـ hero والـ hero-categories
+  const hero = document.querySelector('.hero');
+  if (hero) hero.classList.add('section-hidden');
+  document.querySelectorAll('.hero-categories').forEach(el => el.classList.add('section-hidden'));
+
+  // اعمل scroll للقسم
+  window.scrollTo({ top: Math.max(0, section.offsetTop - 80), behavior: 'smooth' });
+
+  // اظهر زر الرجوع
+  showBackButton();
+
+  // غيّر نص الزر
+  btn.textContent = btn.dataset.less || 'عرض أقل ←';
 }
+
+// ─── الخروج من وضع التركيز والرجوع لكل الأقسام ───
+function exitSectionFocus(){
+  document.body.classList.remove('section-focus');
+  document.querySelectorAll('main section').forEach(s => s.classList.remove('focused-section'));
+  document.querySelectorAll('.section-hidden').forEach(el => el.classList.remove('section-hidden'));
+
+  // ارجّع نص كل أزرار عرض المزيد، واخفي المنتجات الإضافية
+  document.querySelectorAll('.show-more-pill').forEach(btn => {
+    btn.textContent = btn.dataset.more || 'عرض المزيد ←';
+    const sec = btn.closest('section');
+    if (sec){
+      const hidden = sec.querySelector('.hidden-products');
+      if (hidden) hidden.style.display = 'none';
+    }
+  });
+
+  hideBackButton();
+
+  // ارجع لأعلى الصفحة
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── زر الرجوع العائم ───
+function showBackButton(){
+  let btn = document.getElementById('sectionBackBtn');
+  if (!btn){
+    btn = document.createElement('button');
+    btn.id = 'sectionBackBtn';
+    btn.className = 'section-back-btn';
+    btn.setAttribute('aria-label', 'رجوع');
+    btn.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 4l1.4 1.4L7.8 11H20v2H7.8l5.6 5.6L12 20l-8-8z"/>
+      </svg>
+      <span>رجوع</span>`;
+    btn.onclick = exitSectionFocus;
+    document.body.appendChild(btn);
+  }
+  btn.classList.add('visible');
+}
+function hideBackButton(){
+  const btn = document.getElementById('sectionBackBtn');
+  if (btn) btn.classList.remove('visible');
+}
+
+// إغلاق التركيز بـ ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('section-focus')){
+    exitSectionFocus();
+  }
+});
 
 // ─── Scroll to top ───
 function scrollToTop(){
