@@ -774,10 +774,12 @@
     0%,100%{right:-100%} 50%{right:100%}
   }
 
-  /* "عرض المزيد" صندوق ذهبي على اليمين لكل قسم — يفتح صفحة القسم المنفصلة */
+  /* "عرض المزيد" صندوق ذهبي تحت العنوان الفرعي على اليمين */
   section.category{position:relative}
+  .section-more-wrap{
+    display:flex;justify-content:flex-end;margin-top:16px;
+  }
   .show-more-pill{
-    position:absolute;top:80px;right:24px;z-index:4;
     background:linear-gradient(135deg,var(--gold-1),var(--gold-2),var(--gold-3));
     color:#000;font-weight:900;
     padding:12px 22px;border-radius:8px;
@@ -1108,10 +1110,8 @@
     .section-head{margin-bottom:26px}
     .section-head h2{font-size:1.6rem}
     .section-head p{font-size:.85rem}
-    .show-more-pill{
-      position:static;display:block;margin:14px auto 0;width:fit-content;
-      padding:8px 18px;font-size:.85rem;
-    }
+    .show-more-pill{padding:9px 18px;font-size:.85rem}
+    .section-more-wrap{margin-top:12px}
     .product-grid{grid-template-columns:repeat(2, 1fr);gap:12px}
     .product-card{border-radius:10px}
     .product-body{padding:11px;gap:8px}
@@ -1155,10 +1155,8 @@
     .section-head{margin-bottom:26px}
     .section-head h2{font-size:1.6rem}
     .section-head p{font-size:.85rem}
-    .show-more-pill{
-      position:static;display:block;margin:14px auto 0;width:fit-content;
-      padding:8px 18px;font-size:.85rem;
-    }
+    .show-more-pill{padding:9px 18px;font-size:.85rem}
+    .section-more-wrap{margin-top:12px}
     .product-grid{grid-template-columns:repeat(2, 1fr);gap:12px}
     .product-card{border-radius:10px}
     .product-body{padding:11px;gap:8px}
@@ -1873,7 +1871,7 @@ const COVER_BRANDS = ['iPhone','Samsung','Xiaomi','Oppo'];
 
 function buildSection(id, title, subtitle, items, brandFilter){
   // بنعرض أول 6 منتجات بس على الصفحة الرئيسية.
-  // زر "عرض المزيد" على الجنب (اليمين) يفتح صفحة القسم (section.html).
+  // زر "عرض المزيد" يظهر تحت العنوان الفرعي على اليمين.
   const visibleItems = items.slice(0, VISIBLE_PER_SECTION);
   const grid = !items.length
     ? '<p style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:30px">لا توجد منتجات في هذا القسم حالياً</p>'
@@ -1883,12 +1881,12 @@ function buildSection(id, title, subtitle, items, brandFilter){
     : '';
   return `
     <section class="category" id="${id}" data-brand-filter="${brandFilter||''}">
-      ${showMorePill}
       <div class="container">
         <div class="section-head">
           <h2 class="gold-text">${title}</h2>
           <div class="divider"><span class="diamond"></span></div>
           ${subtitle ? `<p>${subtitle}</p>` : ''}
+          ${showMorePill ? `<div class="section-more-wrap">${showMorePill}</div>` : ''}
         </div>
         <div class="product-grid">${grid}</div>
       </div>
