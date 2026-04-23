@@ -786,6 +786,17 @@
       </div>
     </div>
 
+    <div class="card">
+      <h3>📱 إعدادات كفرات الموبايل</h3>
+      <div class="form-group">
+        <label>السعر الموحّد لكل الكفرات (شيقل) *</label>
+        <input type="number" id="setCoverPrice" min="0" step="1" placeholder="40">
+        <small style="color:var(--text-dim);font-size:.78rem">
+          يُطبّق على كل كفرات iPhone / Samsung / Xiaomi / Oppo في الواجهة.
+        </small>
+      </div>
+    </div>
+
     <button class="btn btn-primary" onclick="saveSettings()" style="padding:12px 28px;font-size:1rem">💾 حفظ كل الإعدادات</button>
   </div>
 
@@ -2106,6 +2117,7 @@ function fillSettingsForm(){
   const hero = settings.hero || {};
   const contact = settings.contact || {};
   const about = settings.about || {};
+  const covers = settings.covers || {};
   document.getElementById('setHeroTitle').value = hero.tagline || '';
   document.getElementById('setHeroSub').value = hero.subtitle || '';
   document.getElementById('setLogoUrl').value = hero.logo_url || '';
@@ -2116,6 +2128,7 @@ function fillSettingsForm(){
   document.getElementById('setEmail').value = contact.email || '';
   document.getElementById('setAddress').value = contact.address || '';
   document.getElementById('setAboutText').value = about.text || '';
+  document.getElementById('setCoverPrice').value = covers.price != null ? covers.price : 40;
 }
 
 async function saveSettings(){
@@ -2136,11 +2149,15 @@ async function saveSettings(){
     title: (settings.about && settings.about.title) || 'عن Steels Style',
     text: document.getElementById('setAboutText').value
   };
+  const covers = {
+    price: Number(document.getElementById('setCoverPrice').value) || 40
+  };
 
   const updates = [
     {key:'hero', value:hero},
     {key:'contact', value:contact},
-    {key:'about', value:about}
+    {key:'about', value:about},
+    {key:'covers', value:covers}
   ];
 
   for (const u of updates){
