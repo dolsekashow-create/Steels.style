@@ -795,7 +795,11 @@
   /* 🆕 وضع تركيز القسم: خلفية بيضاء، إخفاء كل الموقع ماعدا القسم المختار + زر الرجوع + السلة */
   body.section-focus{background:#ffffff !important}
   body.section-focus::before,
-  body.section-focus::after{content:none !important;opacity:0 !important}
+  body.section-focus::after{
+    background: none !important;
+    background-image: none !important;
+    opacity: 0 !important;
+  }
   body.section-focus main section:not(.focused-section){display:none}
   body.section-focus .section-hidden{display:none !important}
 
@@ -807,8 +811,6 @@
   body.section-focus .hero-categories,
   body.section-focus .floating-nav,
   body.section-focus .scroll-top,
-  body.section-focus #scrollTopBtn,
-  body.section-focus .search-overlay,
   body.section-focus .credits-section{display:none !important}
 
   /* القسم المختار — على خلفية بيضاء مع نص داكن */
