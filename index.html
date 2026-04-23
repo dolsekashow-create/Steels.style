@@ -995,17 +995,39 @@
     border:1px solid var(--gold-3);
     background:var(--bg-2);
     box-shadow:0 10px 40px -10px rgba(212,175,55,.25), 0 0 0 1px rgba(212,175,55,.08);
+    cursor:pointer;text-decoration:none;color:inherit;
+    transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+  }
+  .credits-video-wrap:hover{
+    transform:translateY(-2px);
+    border-color:var(--gold-1);
+    box-shadow:0 14px 50px -8px rgba(212,175,55,.4), 0 0 0 1px rgba(212,175,55,.18);
   }
   .credits-video{
     display:block;width:100%;height:auto;max-height:360px;
-    object-fit:contain;background:#000;
+    object-fit:contain;background:#000;pointer-events:none;
   }
+  /* Overlay زر "اضغط لزيارة الموقع" */
+  .credits-video-overlay{
+    position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+    display:inline-flex;align-items:center;gap:6px;
+    padding:7px 14px;border-radius:22px;
+    background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+    color:var(--gold-1);font-size:.78rem;font-weight:700;
+    border:1px solid var(--gold-3);
+    pointer-events:none;
+    opacity:.85;transition:opacity .25s;
+    white-space:nowrap;
+  }
+  .credits-video-wrap:hover .credits-video-overlay{opacity:1}
+  .credits-video-overlay svg{flex-shrink:0}
   @media (max-width: 768px){
     .credits-section{padding:36px 14px 22px}
     .credits-title{font-size:1rem;letter-spacing:1.5px;margin-bottom:14px}
     .credits-divider::before,.credits-divider::after{width:54px}
     .credits-video-wrap{border-radius:12px}
     .credits-video{max-height:240px}
+    .credits-video-overlay{font-size:.72rem;padding:6px 12px;bottom:8px}
   }
 
   /* ───── Footer ───── */
@@ -1392,7 +1414,7 @@
   <div class="credits-inner">
     <div class="credits-divider"><span class="diamond"></span></div>
     <h3 class="credits-title gold-text">تم التطوير والإنشاء</h3>
-    <div class="credits-video-wrap">
+    <a class="credits-video-wrap" href="https://www.zero--nine.online/" target="_blank" rel="noopener noreferrer" aria-label="انتقل إلى zero-nine.online">
       <video
         class="credits-video"
         src="./zero-nine-intro.mp4"
@@ -1401,12 +1423,15 @@
         loop
         playsinline
         preload="metadata"
-        controls
         aria-label="فيديو تعريفي"
       >
         متصفحك لا يدعم تشغيل الفيديو.
       </video>
-    </div>
+      <span class="credits-video-overlay" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42L17.59 5H14V3zM5 5h5v2H5v12h12v-5h2v7H3V5z"/></svg>
+        اضغط لزيارة الموقع
+      </span>
+    </a>
   </div>
 </section>
 
