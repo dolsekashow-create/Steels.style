@@ -2047,13 +2047,15 @@ function renderCard(p, catSlugOverride){
       </select>
     </div>` : '';
 
-  // ─── dropdown المقاس ───
-  const firstSizes = firstVariant.sizes || [];
-  const sizeSelectorHtml = (!isFrame && !isCase) ? `
-    <div data-role="size-wrap" style="${firstSizes.length ? '' : 'display:none'}">
+  // ─── dropdown المقاس — اجمع كل المقاسات من كل الـ variants ───
+  const allSizes = !isFrame && !isCase
+    ? [...new Set(variants.flatMap(v => v.sizes || []))]
+    : [];
+  const sizeSelectorHtml = allSizes.length ? `
+    <div data-role="size-wrap">
       <label class="field-label">المقاس:</label>
       <select data-role="size">
-        ${firstSizes.map(s=>`<option value="${s}">${s}</option>`).join('')}
+        ${allSizes.map(s=>`<option value="${s}">${s}</option>`).join('')}
       </select>
     </div>` : '';
 
@@ -2119,15 +2121,21 @@ function attachCardHandlers(card){
   const imgEl         = card.querySelector('.product-image img');
 
   // ─── تطبيق خامة (variant) — يغير السعر والمقاسات والألوان والصورة ───
+  // كل المقاسات من كل الـ variants (للـ dropdown الموحد)
+  const allVariantSizes = [...new Set(variants.flatMap(v => v.sizes || []))];
+
   const applyVariant = (vIdx) => {
     const v = variants[vIdx] || variants[0] || {};
     // السعر
     if (priceEl) priceEl.textContent = v.price || 0;
-    // المقاسات
+    // المقاسات — اعرض كل المقاسات المتاحة (مش بس مقاسات الخامة الحالية)
     if (sizeSelect){
-      const sizes = v.sizes || [];
-      sizeSelect.innerHTML = sizes.map(s=>`<option value="${s}">${s}</option>`).join('');
-      if (sizeWrap) sizeWrap.style.display = sizes.length ? '' : 'none';
+      const sizesToShow = allVariantSizes.length ? allVariantSizes : (v.sizes || []);
+      if (!sizeSelect.options.length || sizeSelect.dataset.populated !== '1'){
+        sizeSelect.innerHTML = sizesToShow.map(s=>`<option value="${s}">${s}</option>`).join('');
+        sizeSelect.dataset.populated = '1';
+      }
+      if (sizeWrap) sizeWrap.style.display = sizesToShow.length ? '' : 'none';
     }
     // الألوان — يعيد رسم الـ swatches للخامة الحالية
     if (colorsBox){
@@ -2180,6 +2188,9 @@ function attachCardHandlers(card){
 
   // اربط الألوان أول مرة
   attachColorClicks();
+
+  // ─── طبّق الـ variant الأول عند التحميل عشان يعرض المقاسات والألوان الصح ───
+  applyVariant(0);
 
   // ─── زر "أضف للسلة" ───
   addBtn.addEventListener('click', () => {
