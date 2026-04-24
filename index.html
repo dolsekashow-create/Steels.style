@@ -1561,6 +1561,7 @@ let products = [];
 let categories = [];
 let characters = []; // 🆕 شخصيات للموقع
 let phoneModelsDB = []; // 🆕 موديلات الموبايل من الـ DB
+let frameSizesDB = []; // 🆕 أحجام البراويز من الـ DB
 const productsMap = new Map();
 let cart = JSON.parse(localStorage.getItem('steels_cart') || '[]');
 let coverImagesMap = {}; // brand_key → image_url
@@ -2182,18 +2183,29 @@ function attachCardHandlers(card){
     }
 
     const phoneModelEl = card.querySelector('.phone-model-select');
+    const frameSizeEl  = card.querySelector('.frame-size-select');
     const phoneModel = phoneModelEl ? phoneModelEl.value : '';
     const isCase = !!phoneModelEl;
+    const isFrameCard = !!frameSizeEl;
+
+    // سعر البرواز من الـ dropdown مباشرة
+    let finalPrice = isCase ? getCoverPrice() : (v.price || 0);
+    let finalSize  = phoneModel || size;
+    if (isFrameCard){
+      const opt = frameSizeEl.options[frameSizeEl.selectedIndex];
+      finalPrice = opt ? Number(opt.dataset.price) || 0 : 0;
+      finalSize  = frameSizeEl.value || size;
+    }
 
     addToCart({
       id: product.id,
       name: product.name,
       image: imgEl?.src || product.image_url || '',
-      variantType: v.type || '',
-      variantLabel: variantLabel,
-      size: phoneModel || size,
+      variantType: isFrameCard ? (frameSizeEl.value || '') : (v.type || ''),
+      variantLabel: isFrameCard ? 'الحجم' : variantLabel,
+      size: isFrameCard ? '' : finalSize,
       color: color,
-      price: isCase ? getCoverPrice() : (v.price || 0),
+      price: finalPrice,
       qty: 1
     });
   });
@@ -2741,6 +2753,13 @@ function isPhoneCaseCategory(catSlug){
   return catSlug && (catSlug.includes('جراب') || catSlug.includes('case') || catSlug.includes('cover') || catSlug.includes('كفر'));
 }
 
+// ─── هل القسم ده براويز؟ ───
+function isFrameCategory(catSlug){
+  if (!catSlug) return false;
+  const s = catSlug.toLowerCase();
+  return s.includes('frame') || s.includes('برواز') || s.includes('براويز');
+}
+
 // ─── الأيقونات والصور لكل براند ───
 // ─── Brand logos: SVG icons نظيفة وحديثة لكل براند ───
 const BRAND_META = {
@@ -2895,6 +2914,49 @@ function buildPhoneModelSelector(cardEl, fixedBrand){
   else body.appendChild(wrap);
 }
 
+// ─── بناء dropdown أحجام البراويز في كارد المنتج ───
+function buildFrameSizeSelector(card){
+  if (card.querySelector('.frame-size-select')) return; // منع التكرار
+  const body = card.querySelector('.product-body');
+  if (!body) return;
+
+  // جهز قائمة الأحجام من الـ DB
+  const sizes = frameSizesDB.length ? frameSizesDB : [];
+  if (!sizes.length) return; // لو مفيش أحجام في الـ DB متعملش حاجة (هيظهر الـ variant العادي)
+
+  // إخفاء الـ variant selector العادي (لأننا هنحل السعر من الـ dropdown)
+  const varWrap = body.querySelector('[data-role="variant-wrap"]');
+  if (varWrap) varWrap.style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'frame-size-wrap';
+  wrap.innerHTML = `
+    <label class="field-label">الحجم:</label>
+    <select class="frame-size-select" onchange="onFrameSizeChange(this)">
+      ${sizes.map((f,i)=>`<option value="${f.size_label}" data-price="${f.price}" ${i===0?'selected':''}>${f.size_label} — ${f.price} ₪</option>`).join('')}
+    </select>`;
+
+  // ضع الـ wrap قبل price-tag مباشرة
+  const priceTag = body.querySelector('.price-tag');
+  if (priceTag) body.insertBefore(wrap, priceTag);
+  else body.appendChild(wrap);
+
+  // تحديث السعر الأولي
+  if (sizes.length){
+    const priceEl = body.querySelector('[data-role="price"]');
+    if (priceEl) priceEl.textContent = sizes[0].price;
+  }
+}
+
+function onFrameSizeChange(sel){
+  const card = sel.closest('.product-card');
+  if (!card) return;
+  const opt = sel.options[sel.selectedIndex];
+  const price = opt ? opt.dataset.price : 0;
+  const priceEl = card.querySelector('[data-role="price"]');
+  if (priceEl) priceEl.textContent = price || 0;
+}
+
 // ─── Canvas Color Tinting ───
 function applyColorTint(card, hexColor){
   const imgWrap = card.querySelector('.product-image');
@@ -2931,10 +2993,18 @@ function applyColorTint(card, hexColor){
   else imgEl.addEventListener('load', paint, {once:true});
 }
 
-// ─── Post-attach extras: phone model selector + canvas tinting ───
+// ─── Post-attach extras: phone model selector + frame size selector + canvas tinting ───
 function attachExtras(card){
   const section = card.closest('section.category');
-  const isCase = section && isPhoneCaseCategory(section.id);
+  const catSlug = section ? section.id : '';
+  const isCase  = isPhoneCaseCategory(catSlug);
+  const isFrame = isFrameCategory(catSlug);
+
+  // البراويز: dropdown حجم من frame_sizes
+  if (isFrame){
+    buildFrameSizeSelector(card);
+    return;
+  }
 
   // Phone model dropdown + hide colors for case/cover sections
   if (isCase){
@@ -2946,7 +3016,6 @@ function attachExtras(card){
   }
 
   // تغيير الصورة عند الضغط على اللون يتم عن طريق attachColorSwatches تلقائياً
-  // (الصور بتيجي من data-image المحفوظ مع كل لون في Supabase)
 }
 
 // ─── Load cover images from Supabase ───
@@ -2966,6 +3035,7 @@ updateCartBadge();
   await loadCategories();
   await loadCharactersFromDB();
   await loadPhoneModelsFromDB();
+  await loadFrameSizesFromDB();
   await loadProducts();
 })();
 
@@ -2992,6 +3062,18 @@ async function loadPhoneModelsFromDB(){
     phoneModelsDB = [];
   } else {
     phoneModelsDB = data || [];
+  }
+}
+
+// ─── تحميل أحجام البراويز من Supabase ───
+async function loadFrameSizesFromDB(){
+  const { data, error } = await sb.from('frame_sizes')
+    .select('*').eq('active', true).order('display_order').order('size_label');
+  if (error){
+    console.warn('frame_sizes table:', error.message);
+    frameSizesDB = [];
+  } else {
+    frameSizesDB = data || [];
   }
 }
 </script>
