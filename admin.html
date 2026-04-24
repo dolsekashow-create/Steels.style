@@ -631,6 +631,7 @@
     <button class="tab" onclick="switchTab('characters', this)">👤 الشخصيات</button>
     <button class="tab" onclick="switchTab('covers', this)">📱 كفرات موبايل</button>
     <button class="tab" onclick="switchTab('phones', this)">📲 موديلات الموبايل</button>
+    <button class="tab" onclick="switchTab('frames', this)">🖼️ أحجام البراويز</button>
     <button class="tab" onclick="switchTab('orders', this)">📦 الطلبات</button>
     <button class="tab" onclick="switchTab('settings', this)">⚙️ الإعدادات</button>
   </nav>
@@ -748,6 +749,20 @@
     </div>
   </div>
 
+  <!-- ─── Frame Sizes ─── -->
+  <div class="tab-content" id="tab-frames">
+    <div class="card">
+      <h3>
+        🖼️ أحجام البراويز وأسعارها
+        <button class="btn btn-primary btn-small" onclick="openFrameSizeForm()">+ إضافة حجم</button>
+      </h3>
+      <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:14px">
+        الأحجام دي بتظهر في قائمة "اختر الحجم" على كارد البراويز في الموقع. كل حجم له سعره المستقل.
+      </p>
+      <div id="frameSizesList"><div class="spinner"></div></div>
+    </div>
+  </div>
+
   <!-- ─── Orders ─── -->
   <div class="tab-content" id="tab-orders">
     <div class="card">
@@ -859,7 +874,7 @@
         </div>
         <div class="form-group">
           <label>الفئة *</label>
-          <select id="pmCategory"></select>
+          <select id="pmCategory" onchange="onProductCategoryChange()"></select>
         </div>
       </div>
       <div class="form-group">
@@ -1025,6 +1040,41 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="frameSizeModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <h3 id="fsmTitle">إضافة حجم برواز</h3>
+      <button class="btn btn-ghost btn-small" onclick="closeFrameSizeForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fsmId">
+      <div class="form-group">
+        <label>الحجم (مثال: 15×20 أو 30×40) *</label>
+        <input type="text" id="fsmSize" placeholder="مثال: 15×20">
+        <small style="color:var(--text-dim);font-size:.75rem">اكتب الحجم بالشكل اللي هيظهر للعميل</small>
+      </div>
+      <div class="form-group">
+        <label>السعر (شيقل) *</label>
+        <input type="number" id="fsmPrice" min="0" step="1" placeholder="مثال: 40">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ترتيب العرض</label>
+          <input type="number" id="fsmOrder" value="0">
+        </div>
+        <div class="form-group">
+          <label>مفعل</label>
+          <select id="fsmActive"><option value="true">نعم</option><option value="false">لا</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="saveFrameSize()">💾 حفظ</button>
+      <button class="btn btn-ghost" onclick="closeFrameSizeForm()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="phoneModelModal">
   <div class="modal" style="max-width:500px">
     <div class="modal-head">
@@ -1074,7 +1124,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_PW = 'nimda321';
-let products = [], orders = [], settings = {}, categories = [], characters = [], phoneModels = [];
+let products = [], orders = [], settings = {}, categories = [], characters = [], phoneModels = [], frameSizes = [];
 
 // ─── Toast ───
 function toast(msg, type=''){
@@ -1117,7 +1167,7 @@ function switchTab(name, btn){
 
 // ─── Load data ───
 async function loadAll(){
-  await Promise.all([loadCategories(), loadCharacters(), loadPhoneModels(), loadProducts(), loadOrders(), loadSettings(), loadCoverImages()]);
+  await Promise.all([loadCategories(), loadCharacters(), loadPhoneModels(), loadFrameSizes(), loadProducts(), loadOrders(), loadSettings(), loadCoverImages()]);
   updateDashboard();
 }
 
@@ -1165,6 +1215,32 @@ function populateCategoryDropdowns(){
   pmCat.innerHTML = categories.filter(c=>c.active).map(c => 
     `<option value="${c.slug}">${c.name}</option>`).join('');
   if (currentCat) pmCat.value = currentCat;
+}
+
+function isFrameCategorySlug(slug){
+  if (!slug) return false;
+  const s = slug.toLowerCase();
+  return s.includes('frame') || s.includes('برواز') || s.includes('براويز');
+}
+
+function onProductCategoryChange(){
+  // إعادة رسم الـ variants list لو في صفوف موجودة (عشان الـ dropdown يتغير)
+  const list = document.getElementById('variantsList');
+  if (!list) return;
+  // احتفظ بالبيانات الحالية وأعد رسمها
+  const rows = [...list.querySelectorAll('.variant-row')];
+  rows.forEach(row => {
+    const type     = row.querySelector('[data-f="type"]')?.value || '';
+    const price    = row.querySelector('[data-f="price"]')?.value || 0;
+    const colors   = [...row.querySelectorAll('[data-f="colors"] .color-tag')].map(t => ({
+      name: t.dataset.name, hex: t.dataset.hex, image: t.dataset.image || ''
+    }));
+    const sizes    = [...row.querySelectorAll('[data-f="sizes"] .tag')].map(t => t.childNodes[0].textContent.trim());
+    const varImg   = row.querySelector('[data-f="variantImage"]')?.value || '';
+    row.remove();
+    addVariant({ type, price: Number(price), colors, sizes, image: varImg });
+  });
+  if (!list.children.length) addVariant();
 }
 
 async function loadProducts(){
@@ -1455,8 +1531,20 @@ function addVariant(data = {}){
     <h4>النوع / الخامة #${idx+1}</h4>
     <div class="form-grid">
       <div class="form-group">
-        <label>اسم النوع (اختياري — للتيشرتات: عادية/أوفر سايز/لايكرا)</label>
-        <input type="text" data-f="type" value="${(data.type||'').replace(/"/g,'&quot;')}" placeholder="مثال: عادية">
+        <label id="varTypeLbl_${idx}">${(()=>{ const slug = document.getElementById('pmCategory')?.value||''; return isFrameCategorySlug(slug)?'الحجم (من الأحجام المحفوظة)':'اسم النوع (اختياري — للتيشرتات: عادية/أوفر سايز/لايكرا)'; })()}</label>
+        ${(()=>{
+          const slug = document.getElementById('pmCategory')?.value || '';
+          if (isFrameCategorySlug(slug)){
+            const activeFrames = frameSizes.filter(f => f.active !== false);
+            const currentType = (data.type||'').replace(/"/g,'&quot;');
+            const opts = activeFrames.map(f =>
+              `<option value="${f.size_label}" data-price="${f.price}" ${f.size_label===currentType?'selected':''}>${f.size_label} — ${f.price} ₪</option>`
+            ).join('');
+            return `<select data-f="type" onchange="syncFramePrice(this)"><option value="">— اختر الحجم —</option>${opts}</select>`;
+          } else {
+            return `<input type="text" data-f="type" value="${(data.type||'').replace(/"/g,'&quot;')}" placeholder="مثال: عادية">`;
+          }
+        })()}
       </div>
       <div class="form-group">
         <label>السعر (شيقل) *</label>
@@ -1511,6 +1599,17 @@ function addVariant(data = {}){
 
   // تهيئة الـ picker في الـ row الجديد
   initPickerInRow(row);
+}
+
+// ─── مزامنة السعر تلقائياً لما تختار حجم برواز ───
+function syncFramePrice(sel){
+  const row = sel.closest('.variant-row');
+  if (!row) return;
+  const priceInput = row.querySelector('[data-f="price"]');
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.price && priceInput){
+    priceInput.value = opt.dataset.price;
+  }
 }
 
 // ─── إضافة لون من الـ picker كـ tag ───
@@ -2604,6 +2703,118 @@ setTimeout(() => {
   const cm = document.getElementById('characterModal');
   if (cm) cm.addEventListener('click', (e)=>{
     if (e.target.id === 'characterModal') closeCharacterForm();
+  });
+}, 100);
+
+// ═══════════════════════════════════════════════════════════════════
+// ═══  FRAME SIZES  ══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+
+async function loadFrameSizes(){
+  const { data, error } = await sb.from('frame_sizes')
+    .select('*').order('display_order').order('size_label');
+  if (error){
+    console.warn('frame_sizes table:', error.message);
+    frameSizes = [];
+  } else {
+    frameSizes = data || [];
+  }
+  renderFrameSizes();
+}
+
+function renderFrameSizes(){
+  const box = document.getElementById('frameSizesList');
+  if (!box) return;
+  if (!frameSizes.length){
+    box.innerHTML = '<div class="empty-state">لا توجد أحجام بعد — اضغط "+ إضافة حجم"</div>';
+    return;
+  }
+  box.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>#</th><th>الحجم</th><th>السعر (₪)</th><th>الحالة</th><th>إجراءات</th>
+    </tr></thead>
+    <tbody>
+      ${frameSizes.map(f => `
+        <tr>
+          <td>${f.display_order||0}</td>
+          <td><strong style="color:var(--gold-1)">${f.size_label}</strong></td>
+          <td><strong style="color:var(--ok)">${f.price} ₪</strong></td>
+          <td>${f.active ? '<span class="badge badge-delivered">مفعل</span>' : '<span class="badge badge-cancelled">غير مفعل</span>'}</td>
+          <td>
+            <button class="btn btn-ghost btn-small" onclick="editFrameSize('${f.id}')">✎</button>
+            <button class="btn btn-danger btn-small" onclick="deleteFrameSize('${f.id}')">🗑️</button>
+          </td>
+        </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function openFrameSizeForm(){
+  document.getElementById('fsmTitle').textContent = 'إضافة حجم برواز';
+  document.getElementById('fsmId').value = '';
+  document.getElementById('fsmSize').value = '';
+  document.getElementById('fsmPrice').value = '';
+  document.getElementById('fsmOrder').value = frameSizes.length;
+  document.getElementById('fsmActive').value = 'true';
+  document.getElementById('frameSizeModal').classList.add('open');
+}
+
+function editFrameSize(id){
+  const f = frameSizes.find(x => String(x.id) === String(id));
+  if (!f) return;
+  document.getElementById('fsmTitle').textContent = 'تعديل حجم برواز';
+  document.getElementById('fsmId').value = f.id;
+  document.getElementById('fsmSize').value = f.size_label;
+  document.getElementById('fsmPrice').value = f.price;
+  document.getElementById('fsmOrder').value = f.display_order || 0;
+  document.getElementById('fsmActive').value = String(f.active);
+  document.getElementById('frameSizeModal').classList.add('open');
+}
+
+function closeFrameSizeForm(){
+  document.getElementById('frameSizeModal').classList.remove('open');
+}
+
+async function saveFrameSize(){
+  const sizeLabel = document.getElementById('fsmSize').value.trim();
+  const price = Number(document.getElementById('fsmPrice').value);
+  if (!sizeLabel){ toast('أدخل الحجم', 'error'); return; }
+  if (!price || price <= 0){ toast('أدخل سعر صحيح', 'error'); return; }
+
+  const payload = {
+    size_label: sizeLabel,
+    price,
+    display_order: Number(document.getElementById('fsmOrder').value) || 0,
+    active: document.getElementById('fsmActive').value === 'true'
+  };
+
+  const id = document.getElementById('fsmId').value;
+  let result;
+  if (id){
+    result = await sb.from('frame_sizes').update(payload).eq('id', id);
+  } else {
+    result = await sb.from('frame_sizes').insert([payload]);
+  }
+  if (result.error){ toast('فشل الحفظ: ' + result.error.message, 'error'); return; }
+  toast('✓ تم الحفظ', 'success');
+  closeFrameSizeForm();
+  await loadFrameSizes();
+}
+
+async function deleteFrameSize(id){
+  const f = frameSizes.find(x => String(x.id) === String(id));
+  if (!f) return;
+  if (!confirm(`هل أنت متأكد من حذف حجم "${f.size_label}"؟`)) return;
+  const { error } = await sb.from('frame_sizes').delete().eq('id', id);
+  if (error){ toast('فشل الحذف', 'error'); return; }
+  toast('✓ تم الحذف', 'success');
+  await loadFrameSizes();
+}
+
+setTimeout(() => {
+  const fsm = document.getElementById('frameSizeModal');
+  if (fsm) fsm.addEventListener('click', (e)=>{
+    if (e.target.id === 'frameSizeModal') closeFrameSizeForm();
   });
 }, 100);
 
