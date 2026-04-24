@@ -2186,6 +2186,18 @@ function attachCardHandlers(card){
     });
   }
 
+  // ─── لما تغير المقاس — حدّث السعر من الـ variant اللي فيه المقاس ده ───
+  if (sizeSelect){
+    sizeSelect.addEventListener('change', () => {
+      const selectedSize = sizeSelect.value;
+      // دور على أول variant بيحتوي المقاس ده
+      const matchedVariant = variants.find(v => (v.sizes||[]).includes(selectedSize));
+      if (matchedVariant && priceEl){
+        priceEl.textContent = matchedVariant.price || 0;
+      }
+    });
+  }
+
   // اربط الألوان أول مرة
   attachColorClicks();
 
@@ -2195,7 +2207,15 @@ function attachCardHandlers(card){
   // ─── زر "أضف للسلة" ───
   addBtn.addEventListener('click', () => {
     const vIdx = variantSelect ? parseInt(variantSelect.value || '0') : 0;
-    const v = variants[vIdx] || {};
+    let v = variants[vIdx] || {};
+
+    const size = sizeSelect && sizeSelect.value ? sizeSelect.value : '';
+
+    // لو في مقاس مختار — خد السعر من الـ variant اللي فيه المقاس ده
+    if (size){
+      const bySize = variants.find(vv => (vv.sizes||[]).includes(size));
+      if (bySize) v = bySize;
+    }
 
     // تحقق من اللون (لو في ألوان)
     const activeSwatch = colorsBox ? colorsBox.querySelector('.color-swatch.active') : null;
@@ -2206,7 +2226,6 @@ function attachCardHandlers(card){
     }
 
     // تحقق من المقاس (لو في مقاسات)
-    const size = sizeSelect && sizeSelect.value ? sizeSelect.value : '';
     if ((v.sizes||[]).length && !size){
       toast('اختر المقاس أولاً', 'error');
       return;
