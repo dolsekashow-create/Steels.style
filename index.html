@@ -774,24 +774,38 @@
     0%,100%{right:-100%} 50%{right:100%}
   }
 
-  /* "عرض المزيد" صندوق ذهبي تحت العنوان الفرعي على اليمين */
+  /* "عرض المزيد" — أسفل الـ grid، خلفية بيضاء + شعاع ذهبي */
   section.category{position:relative}
   .section-more-wrap{
-    display:flex;justify-content:flex-end;margin-top:16px;
+    display:flex;justify-content:center;margin-top:24px;
   }
   .show-more-pill{
-    background:linear-gradient(135deg,var(--gold-1),var(--gold-2),var(--gold-3));
-    color:#000;font-weight:900;
-    padding:12px 22px;border-radius:8px;
-    border:1.5px solid #5a4a1a;cursor:pointer;
-    font-family:var(--font-ar);font-size:.95rem;letter-spacing:.5px;
-    box-shadow:0 6px 20px -2px rgba(212,175,55,.55), inset 0 1px 0 rgba(255,255,255,.35);
+    background:#ffffff;
+    color:#1a1200;font-weight:900;
+    padding:13px 40px;border-radius:50px;
+    border:none;cursor:pointer;
+    font-family:var(--font-ar);font-size:1rem;letter-spacing:.5px;
+    box-shadow:0 0 0 2px var(--gold-1),
+               0 0 18px 4px rgba(212,175,55,.55),
+               0 0 40px 8px rgba(212,175,55,.25);
     transition:all .25s;
     white-space:nowrap;
-    text-shadow:0 1px 0 rgba(255,255,255,.25);
     text-decoration:none;display:inline-block;
+    position:relative;
   }
-  .show-more-pill:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 28px -2px rgba(212,175,55,.75), inset 0 1px 0 rgba(255,255,255,.4)}
+  .show-more-pill::before{
+    content:'';position:absolute;inset:-3px;border-radius:54px;
+    background:linear-gradient(135deg,var(--gold-1),var(--gold-3),var(--gold-1));
+    z-index:-1;opacity:.7;filter:blur(6px);
+    transition:opacity .25s;
+  }
+  .show-more-pill:hover{
+    transform:translateY(-2px) scale(1.04);
+    box-shadow:0 0 0 2px var(--gold-1),
+               0 0 28px 8px rgba(212,175,55,.75),
+               0 0 60px 14px rgba(212,175,55,.35);
+  }
+  .show-more-pill:hover::before{opacity:1}
   .show-more-pill:active{transform:translateY(0) scale(.98)}
 
   /* Delivery fee row in cart */
@@ -1887,9 +1901,9 @@ function buildSection(id, title, subtitle, items, brandFilter){
           <h2 class="gold-text">${title}</h2>
           <div class="divider"><span class="diamond"></span></div>
           ${subtitle ? `<p>${subtitle}</p>` : ''}
-          ${showMorePill ? `<div class="section-more-wrap">${showMorePill}</div>` : ''}
         </div>
         <div class="product-grid">${grid}</div>
+        ${showMorePill ? `<div class="section-more-wrap">${showMorePill}</div>` : ''}
       </div>
     </section>`;
 }
