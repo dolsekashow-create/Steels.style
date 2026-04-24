@@ -467,7 +467,19 @@
   }
   .product-list-item .name{color:var(--gold-1);font-weight:700;margin-bottom:3px;font-size:.95rem}
   .product-list-item .meta{color:var(--text-dim);font-size:.78rem}
-  .product-list-item .actions{display:flex;gap:6px}
+  .product-list-item .actions{display:flex;gap:6px;align-items:center}
+
+  /* ───── أزرار ترتيب العرض (سهم فوق/تحت) ───── */
+  .order-arrows{display:inline-flex;flex-direction:column;gap:3px;margin-inline-end:4px;vertical-align:middle}
+  .order-arrows button{
+    background:var(--bg-3);border:1px solid var(--line);color:var(--text);
+    width:30px;height:22px;border-radius:5px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:.72rem;padding:0;line-height:1;transition:all .15s;
+    font-family:inherit;
+  }
+  .order-arrows button:hover:not(:disabled){border-color:var(--gold-2);color:var(--gold-1);background:rgba(212,175,55,.08)}
+  .order-arrows button:disabled{opacity:.28;cursor:not-allowed}
 
   .order-details{background:var(--bg-3);padding:12px;border-radius:var(--radius-sm);margin-top:10px;font-size:.85rem}
 
@@ -1341,6 +1353,63 @@ function formatDate(d){
 }
 
 // ─── Products list ───
+// ─── Reorder helpers (أسهم فوق/تحت) ───
+function _sortByOrder(a, b){
+  const oa = Number(a.display_order) || 0;
+  const ob = Number(b.display_order) || 0;
+  if (oa !== ob) return oa - ob;
+  return new Date(a.created_at||0) - new Date(b.created_at||0);
+}
+
+async function _moveItem(table, allItems, visibleItems, id, dir, reloadFn){
+  // لقي العنصر وجاره في القائمة المعروضة حالياً (بعد الفلترة لو في فلتر)
+  const visSorted = [...visibleItems].sort(_sortByOrder);
+  const vi = visSorted.findIndex(x => x.id === id);
+  if (vi < 0) return;
+  const vj = dir === 'up' ? vi - 1 : vi + 1;
+  if (vj < 0 || vj >= visSorted.length) return;
+  const neighborId = visSorted[vj].id;
+
+  // اشتغل على القائمة الكاملة عشان الترقيم يفضل صح على مستوى الموقع كله
+  const fullSorted = [...allItems].sort(_sortByOrder);
+  const fi = fullSorted.findIndex(x => x.id === id);
+  const fj = fullSorted.findIndex(x => x.id === neighborId);
+  if (fi < 0 || fj < 0) return;
+
+  // بدّل الموقعين
+  [fullSorted[fi], fullSorted[fj]] = [fullSorted[fj], fullSorted[fi]];
+
+  // رتّب display_order لكل عنصر بقيمة (index+1)*10 لو قيمته الجديدة مختلفة
+  // ده يحل مشكلة الصفوف اللي display_order بتاعها 0 أو null (ييتصلحوا أوتوماتيك من أول ضغطة)
+  const updates = [];
+  fullSorted.forEach((item, idx) => {
+    const newOrder = (idx + 1) * 10;
+    if ((Number(item.display_order) || 0) !== newOrder){
+      updates.push(sb.from(table).update({display_order: newOrder}).eq('id', item.id));
+    }
+  });
+
+  if (updates.length){
+    const results = await Promise.all(updates);
+    if (results.some(r => r.error)){
+      console.error(results.find(r => r.error).error);
+      toast('فشل تحريك العنصر', 'error');
+      return;
+    }
+  }
+  await reloadFn();
+}
+
+async function moveProduct(id, dir){
+  const filter = document.getElementById('filterCat').value;
+  const visible = products.filter(p => !filter || p.category === filter);
+  await _moveItem('products', products, visible, id, dir, loadProducts);
+}
+
+async function moveCategory(id, dir){
+  await _moveItem('categories', categories, categories, id, dir, loadCategories);
+}
+
 function renderProducts(){
   const filter = document.getElementById('filterCat').value;
   const list = products.filter(p => !filter || p.category === filter);
@@ -1354,8 +1423,10 @@ function renderProducts(){
     '<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="#555"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2z"/></svg>'
   );
   box.innerHTML = `<div class="product-list">
-    ${list.map(p => {
+    ${list.map((p, idx) => {
       const img = p.image_url || placeholderImg;
+      const isFirst = idx === 0;
+      const isLast  = idx === list.length - 1;
       return `
         <div class="product-list-item">
           <img src="${img}" onerror="this.src='${placeholderImg}'">
@@ -1368,6 +1439,10 @@ function renderProducts(){
             </div>
           </div>
           <div class="actions">
+            <div class="order-arrows">
+              <button onclick="moveProduct('${p.id}','up')" ${isFirst?'disabled':''} title="تحريك لفوق">▲</button>
+              <button onclick="moveProduct('${p.id}','down')" ${isLast?'disabled':''} title="تحريك لتحت">▼</button>
+            </div>
             <button class="btn btn-ghost btn-small" onclick="editProduct('${p.id}')">✎ تعديل</button>
             <button class="btn btn-danger btn-small" onclick="deleteProduct('${p.id}')">🗑️</button>
           </div>
@@ -2537,8 +2612,10 @@ function renderCategories(){
         <th>الحالة</th><th>إجراءات</th>
       </tr></thead>
       <tbody>
-        ${categories.map(c => {
+        ${categories.map((c, idx) => {
           const count = products.filter(p => p.category === c.slug).length;
+          const isFirst = idx === 0;
+          const isLast  = idx === categories.length - 1;
           return `
             <tr>
               <td>${c.display_order}</td>
@@ -2547,8 +2624,14 @@ function renderCategories(){
               <td>${count}</td>
               <td>${c.active ? '<span class="badge badge-delivered">مفعل</span>' : '<span class="badge badge-cancelled">غير مفعل</span>'}</td>
               <td>
-                <button class="btn btn-ghost btn-small" onclick="editCategory('${c.id}')">✎</button>
-                <button class="btn btn-danger btn-small" onclick="deleteCategory('${c.id}')" ${count>0?'title="احذف المنتجات أولاً"':''}>🗑️</button>
+                <div style="display:inline-flex;gap:6px;align-items:center">
+                  <div class="order-arrows">
+                    <button onclick="moveCategory('${c.id}','up')" ${isFirst?'disabled':''} title="تحريك لفوق">▲</button>
+                    <button onclick="moveCategory('${c.id}','down')" ${isLast?'disabled':''} title="تحريك لتحت">▼</button>
+                  </div>
+                  <button class="btn btn-ghost btn-small" onclick="editCategory('${c.id}')">✎</button>
+                  <button class="btn btn-danger btn-small" onclick="deleteCategory('${c.id}')" ${count>0?'title="احذف المنتجات أولاً"':''}>🗑️</button>
+                </div>
               </td>
             </tr>`;
         }).join('')}
