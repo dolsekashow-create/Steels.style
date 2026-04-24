@@ -703,6 +703,120 @@
     .pm-name{font-size:1.1rem}
   }
 
+  /* ───── Cover Quick-View Modal (خاص بكفرات الموبايل) ───── */
+  #coverModal{
+    position:fixed;inset:0;z-index:310;
+    background:rgba(0,0,0,.88);
+    display:flex;align-items:center;justify-content:center;
+    padding:16px;
+    opacity:0;pointer-events:none;
+    transition:opacity .25s ease;
+    backdrop-filter:blur(8px);
+  }
+  #coverModal.open{opacity:1;pointer-events:all}
+  #coverModal.open .cm-inner{transform:scale(1);opacity:1}
+  .cm-inner{
+    background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg-1) 100%);
+    border:1px solid var(--gold-3);
+    border-radius:var(--radius);
+    width:100%;max-width:520px;
+    max-height:90vh;
+    overflow-y:auto;
+    position:relative;
+    transform:scale(.93);opacity:0;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .25s ease;
+    box-shadow:0 30px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(212,175,55,.12);
+  }
+  .cm-inner::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg, transparent, var(--gold-2), transparent);
+  }
+  .cm-close{
+    position:absolute;top:14px;left:14px;
+    background:rgba(0,0,0,.5);border:1px solid var(--line);
+    color:var(--text);width:34px;height:34px;border-radius:50%;
+    display:grid;place-items:center;cursor:pointer;
+    font-size:1.1rem;z-index:2;transition:all .2s;
+  }
+  .cm-close:hover{border-color:var(--danger);color:var(--danger);background:rgba(192,64,64,.15)}
+  .cm-header{
+    padding:22px 22px 14px;text-align:center;
+    border-bottom:1px solid rgba(212,175,55,.15);
+    background:linear-gradient(180deg, rgba(212,175,55,.08), transparent);
+  }
+  .cm-brand-icon{
+    font-size:2rem;margin-bottom:6px;display:inline-block;
+    filter:drop-shadow(0 0 12px var(--gold-glow));
+  }
+  .cm-brand-name{
+    font-family:var(--font-en);font-size:1.4rem;font-weight:900;
+    letter-spacing:2px;color:var(--gold-1);
+    text-shadow:0 0 20px var(--gold-glow);
+  }
+  .cm-img-wrap{
+    width:100%;aspect-ratio:1.1;max-height:340px;background:var(--bg-3);
+    overflow:hidden;position:relative;border-bottom:1px solid var(--line);
+  }
+  .cm-img-wrap img{
+    width:100%;height:100%;object-fit:cover;
+    transition:transform .4s ease;
+  }
+  .cm-img-wrap:hover img{transform:scale(1.04)}
+  .cm-img-wrap.no-img{
+    display:grid;place-items:center;font-size:3.2rem;opacity:.35;color:var(--gold-3);
+  }
+  .cm-body{
+    padding:22px 22px 24px;display:flex;flex-direction:column;gap:14px;
+  }
+  .cm-body .field-label{
+    font-size:.85rem;color:var(--text-dim);font-weight:700;margin-bottom:6px;
+    display:block;
+  }
+  .cm-body select{
+    width:100%;padding:12px 14px;background:var(--bg-3);color:var(--text);
+    border:1px solid var(--line);border-radius:var(--radius-sm);
+    font-family:var(--font-ar);font-size:.95rem;font-weight:600;outline:none;
+    cursor:pointer;transition:border-color .2s;
+  }
+  .cm-body select:focus{border-color:var(--gold-3)}
+  .cm-price-tag{
+    display:flex;align-items:baseline;justify-content:center;gap:8px;
+    padding:14px;background:rgba(212,175,55,.06);
+    border:1px dashed var(--gold-3);border-radius:var(--radius-sm);
+  }
+  .cm-price-tag .num{
+    font-size:1.8rem;font-weight:900;color:var(--gold-1);
+    font-family:var(--font-en);
+  }
+  .cm-price-tag .cur{color:var(--text-dim);font-size:1rem;font-weight:700}
+  .cm-add-btn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:14px;width:100%;
+    background:linear-gradient(135deg,var(--gold-2),var(--gold-3));
+    color:#000;border:none;border-radius:var(--radius-sm);
+    font-family:var(--font-ar);font-weight:900;font-size:1rem;cursor:pointer;
+    transition:all .25s;letter-spacing:.3px;
+    box-shadow:0 6px 18px -6px var(--gold-glow);
+  }
+  .cm-add-btn:hover{
+    letter-spacing:.8px;transform:translateY(-2px);
+    box-shadow:0 10px 28px -6px var(--gold-glow);
+  }
+  .cm-add-btn:active{transform:translateY(0) scale(.98)}
+  @media(max-width:600px){
+    .cm-inner{max-width:100%;max-height:94vh}
+    .cm-header{padding:18px 18px 12px}
+    .cm-brand-name{font-size:1.2rem}
+    .cm-body{padding:18px;gap:12px}
+    .cm-price-tag .num{font-size:1.5rem}
+  }
+
+  /* الكارد بقى clickable — مؤشر اليد */
+  .cover-brand-card{cursor:pointer}
+  /* منع انتشار الضغط من الـ select والزر */
+  .cover-brand-card select,
+  .cover-brand-card button{cursor:pointer}
+
   /* ───── Floating nav buttons ───── */
   .floating-nav{
     position:fixed;left:18px;bottom:18px;z-index:60;
@@ -2514,6 +2628,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape'){
     closeDescModal();
     closeProductModal();
+    closeCoverModal();
   }
 });
 
@@ -2836,7 +2951,12 @@ const BRAND_META = {
 
 // ─── بناء section الكفرات بـ 4 كاردات ثابتة ───
 function buildCoverSection(cat){
-  const cards = Object.keys(PHONE_MODELS).map(brand => {
+  // كل البراندات المتاحة
+  const allBrands = Object.keys(PHONE_MODELS);
+  // ناخد بس أول 6 للعرض في الصفحة الرئيسية
+  const visibleBrands = allBrands.slice(0, VISIBLE_PER_SECTION);
+
+  const cards = visibleBrands.map(brand => {
     const meta      = BRAND_META[brand] || { icon:'📱', label: brand };
     const brandKey  = brand.toLowerCase();
     // الصورة: أولاً من cover_images في Supabase، وإلا من أول منتج في القسم
@@ -2849,8 +2969,10 @@ function buildCoverSection(cat){
       ? `<img src="${imgUrl}" alt="كفر ${brand}" loading="lazy">`
       : `<div class="no-img-icon" aria-label="${brand}">${meta.icon}</div>`;
 
+    // الكارد بقى قابل للضغط — يفتح الـ modal
+    // الـ select والزر فيهم onclick="event.stopPropagation()" عشان ميفتحوش الـ modal
     return `
-      <div class="cover-brand-card" data-brand="${brand}">
+      <div class="cover-brand-card" data-brand="${brand}" data-cat="${cat.slug}" data-img="${imgUrl}" onclick="openCoverModal('${brand}','${cat.slug}','${imgUrl}')">
         <div class="cover-brand-header">
           <span class="cover-brand-icon">${meta.icon}</span>
           <span class="cover-brand-name">${meta.label}</span>
@@ -2859,9 +2981,9 @@ function buildCoverSection(cat){
           ${imgHtml}
         </div>
         <div class="cover-brand-body">
-          <div>
+          <div onclick="event.stopPropagation()">
             <span class="cover-model-label">اختر الموديل:</span>
-            <select class="cover-model-select">
+            <select class="cover-model-select" onclick="event.stopPropagation()">
               ${models.map(m=>`<option value="${m}">${m}</option>`).join('')}
             </select>
           </div>
@@ -2869,13 +2991,18 @@ function buildCoverSection(cat){
             <span class="num">${getCoverPrice()}</span>
             <span class="cur">شيقل</span>
           </div>
-          <button class="cover-add-btn" onclick="addCoverToCart(this,'${brand}','${cat.slug}','${imgUrl}')">
+          <button class="cover-add-btn" onclick="event.stopPropagation(); addCoverToCart(this,'${brand}','${cat.slug}','${imgUrl}')">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 3v2h2l3.6 7.6-1.4 2.4c-.2.3-.2.7 0 1 .2.3.5.5.9.5h12v-2H7.4l1-2h7c.8 0 1.4-.4 1.7-1l3.5-6.3c.2-.3.2-.7 0-1-.2-.3-.6-.5-1-.5H5.2l-1-2H1zm16 15c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
             أضف للسلة
           </button>
         </div>
       </div>`;
   }).join('');
+
+  // زر "عرض المزيد" يظهر بس لو في براندات زيادة عن الـ 6
+  const showMorePill = allBrands.length > VISIBLE_PER_SECTION
+    ? `<a class="show-more-pill" href="section.html?cat=${encodeURIComponent(cat.slug)}">عرض المزيد ←</a>`
+    : '';
 
   return `
     <section class="covers-section" id="${cat.slug}">
@@ -2886,6 +3013,7 @@ function buildCoverSection(cat){
           ${cat.subtitle ? `<p>${cat.subtitle}</p>` : '<p style="color:var(--text-dim)">اختر الجهاز والموديل المناسب ليك</p>'}
         </div>
         <div class="covers-grid">${cards}</div>
+        ${showMorePill ? `<div class="section-more-wrap">${showMorePill}</div>` : ''}
       </div>
     </section>`;
 }
@@ -2911,6 +3039,84 @@ function addCoverToCart(btn, brand, catSlug, imgUrl){
     price: getCoverPrice(),
     qty: 1
   });
+}
+
+// ─── Cover Quick-View Modal (كارد الكفر المنبثق) ───
+let _cmBrand = '', _cmCat = '', _cmImg = '';
+
+function openCoverModal(brand, catSlug, imgUrl){
+  _cmBrand = brand;
+  _cmCat   = catSlug;
+  _cmImg   = imgUrl || '';
+
+  const meta   = BRAND_META[brand] || { icon:'📱', label: brand };
+  const models = getPhoneModels(brand);
+
+  // الأيقونة واسم البراند
+  document.getElementById('cmBrandIcon').textContent = meta.icon;
+  document.getElementById('cmBrandName').textContent = meta.label;
+
+  // الصورة
+  const imgWrap = document.getElementById('cmImgWrap');
+  const imgEl   = document.getElementById('cmImg');
+  // امسح أي placeholder قديم (غير الـ img)
+  imgWrap.querySelectorAll('.cm-no-img-ph').forEach(el => el.remove());
+  if (imgUrl){
+    imgWrap.classList.remove('no-img');
+    imgEl.src = imgUrl;
+    imgEl.alt = `كفر ${brand}`;
+    imgEl.style.display = '';
+  } else {
+    imgWrap.classList.add('no-img');
+    imgEl.style.display = 'none';
+    const ph = document.createElement('div');
+    ph.className = 'cm-no-img-ph';
+    ph.setAttribute('aria-label', brand);
+    ph.textContent = meta.icon;
+    imgWrap.appendChild(ph);
+  }
+
+  // قائمة الموديلات
+  const sel = document.getElementById('cmModelSelect');
+  sel.innerHTML = models.map(m=>`<option value="${m}">${m}</option>`).join('');
+
+  // السعر
+  document.getElementById('cmPrice').textContent = getCoverPrice();
+
+  // افتح الـ modal
+  document.getElementById('coverModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCoverModal(){
+  document.getElementById('coverModal').classList.remove('open');
+  document.body.style.overflow = '';
+  _cmBrand = ''; _cmCat = ''; _cmImg = '';
+}
+
+function handleCoverModalBackdrop(e){
+  if (e.target.id === 'coverModal') closeCoverModal();
+}
+
+function cmAddToCart(){
+  if (!_cmBrand) return;
+  const model = document.getElementById('cmModelSelect').value || '';
+  const catItems = products.filter(p => p.category === _cmCat);
+  const productName = catItems.length ? catItems[0].name : 'كفر موبايل';
+
+  addToCart({
+    id: _cmCat + '-' + _cmBrand,
+    name: `${productName} — ${_cmBrand}`,
+    image: _cmImg || '',
+    variantType: _cmBrand,
+    variantLabel: 'الجهاز',
+    size: model,
+    color: '',
+    price: getCoverPrice(),
+    qty: 1
+  });
+
+  closeCoverModal();
 }
 
 function buildPhoneModelSelector(cardEl, fixedBrand){
@@ -3192,6 +3398,41 @@ async function loadFrameSizesFromDB(){
 
       <!-- زر الإضافة -->
       <button class="add-cart-btn" onclick="pmAddToCart()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 3v2h2l3.6 7.6-1.4 2.4c-.2.3-.2.7 0 1 .2.3.5.5.9.5h12v-2H7.4l1-2h7c.8 0 1.4-.4 1.7-1l3.5-6.3c.2-.3.2-.7 0-1-.2-.3-.6-.5-1-.5H5.2l-1-2H1zm16 15c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        أضف للسلة
+      </button>
+    </div>
+  </div>
+</div>
+<!-- ═════════ COVER QUICK-VIEW MODAL (كفرات الموبايل) ═════════ -->
+<div id="coverModal" onclick="handleCoverModalBackdrop(event)">
+  <div class="cm-inner">
+    <button class="cm-close" onclick="closeCoverModal()" title="إغلاق">✕</button>
+
+    <!-- الهيدر: أيقونة البراند واسمه -->
+    <div class="cm-header">
+      <div class="cm-brand-icon" id="cmBrandIcon">📱</div>
+      <div class="cm-brand-name" id="cmBrandName"></div>
+    </div>
+
+    <!-- صورة الكفر -->
+    <div class="cm-img-wrap" id="cmImgWrap">
+      <img id="cmImg" src="" alt="">
+    </div>
+
+    <!-- التفاصيل -->
+    <div class="cm-body">
+      <div>
+        <label class="field-label">اختر الموديل:</label>
+        <select id="cmModelSelect"></select>
+      </div>
+
+      <div class="cm-price-tag">
+        <span class="num" id="cmPrice">0</span>
+        <span class="cur">شيقل</span>
+      </div>
+
+      <button class="cm-add-btn" onclick="cmAddToCart()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 3v2h2l3.6 7.6-1.4 2.4c-.2.3-.2.7 0 1 .2.3.5.5.9.5h12v-2H7.4l1-2h7c.8 0 1.4-.4 1.7-1l3.5-6.3c.2-.3.2-.7 0-1-.2-.3-.6-.5-1-.5H5.2l-1-2H1zm16 15c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
         أضف للسلة
       </button>
