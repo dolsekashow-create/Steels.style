@@ -747,7 +747,9 @@
   .cm-brand-icon{
     font-size:2rem;margin-bottom:6px;display:inline-block;
     filter:drop-shadow(0 0 12px var(--gold-glow));
+    color:var(--gold-1);line-height:0;
   }
+  .cm-brand-icon svg{width:40px;height:40px;display:block;margin:0 auto}
   .cm-brand-name{
     font-family:var(--font-en);font-size:1.4rem;font-weight:900;
     letter-spacing:2px;color:var(--gold-1);
@@ -765,6 +767,7 @@
   .cm-img-wrap.no-img{
     display:grid;place-items:center;font-size:3.2rem;opacity:.35;color:var(--gold-3);
   }
+  .cm-no-img-ph svg{width:72px;height:72px;color:var(--gold-3)}
   .cm-body{
     padding:22px 22px 24px;display:flex;flex-direction:column;gap:14px;
   }
@@ -3053,7 +3056,7 @@ function openCoverModal(brand, catSlug, imgUrl){
   const models = getPhoneModels(brand);
 
   // الأيقونة واسم البراند
-  document.getElementById('cmBrandIcon').textContent = meta.icon;
+  document.getElementById('cmBrandIcon').innerHTML = meta.icon;
   document.getElementById('cmBrandName').textContent = meta.label;
 
   // الصورة
@@ -3072,7 +3075,7 @@ function openCoverModal(brand, catSlug, imgUrl){
     const ph = document.createElement('div');
     ph.className = 'cm-no-img-ph';
     ph.setAttribute('aria-label', brand);
-    ph.textContent = meta.icon;
+    ph.innerHTML = meta.icon;
     imgWrap.appendChild(ph);
   }
 
