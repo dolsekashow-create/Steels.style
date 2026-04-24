@@ -1890,7 +1890,7 @@ function buildSection(id, title, subtitle, items, brandFilter){
   const visibleItems = items.slice(0, VISIBLE_PER_SECTION);
   const grid = !items.length
     ? '<p style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:30px">لا توجد منتجات في هذا القسم حالياً</p>'
-    : visibleItems.map(p => renderCard(p, brandFilter)).join('');
+    : visibleItems.map(p => renderCard(p, id)).join('');
   const showMorePill = items.length
     ? `<a class="show-more-pill" href="section.html?cat=${encodeURIComponent(id)}">عرض المزيد ←</a>`
     : '';
@@ -2025,22 +2025,20 @@ function normalizeProductVariants(variants){
 }
 
 // ─── Render single card ───
-function renderCard(p){
+function renderCard(p, catSlugOverride){
+  const catSlug = catSlugOverride || p.category || '';
+  const isFrame = isFrameCategory(catSlug);
+  const isCase  = isPhoneCaseCategory(catSlug);
+
   const variants = normalizeProductVariants(p.variants || []);
-  const hasVariants = variants.length > 0;
   const firstVariant = variants[0] || {type:'', price:0, sizes:[], image:'', colors:[]};
-
-  // هل في خامات متعددة بأسماء (نعرض dropdown)؟
-  const typedVariants = variants.filter(v => v.type);
-  const showVariantSelector = typedVariants.length > 1 ||
-    (variants.length > 1 && variants.every(v => v.type !== variants[0].type));
-
   const variantLabel = getVariantLabel(p);
 
-  // الصورة الأولية
   const initialImg = p.image_url || firstVariant.image || '';
 
-  // HTML لاختيار الخامة (dropdown لو أكثر من variant)
+  // ─── dropdown الخامة / النوع ───
+  const typedVariants = variants.filter(v => v.type);
+  const showVariantSelector = !isFrame && !isCase && typedVariants.length >= 1;
   const variantSelectorHtml = showVariantSelector ? `
     <div data-role="variant-wrap">
       <label class="field-label">اختر ${variantLabel}:</label>
@@ -2049,10 +2047,32 @@ function renderCard(p){
       </select>
     </div>` : '';
 
+  // ─── dropdown المقاس ───
+  const firstSizes = firstVariant.sizes || [];
+  const sizeSelectorHtml = (!isFrame && !isCase) ? `
+    <div data-role="size-wrap" style="${firstSizes.length ? '' : 'display:none'}">
+      <label class="field-label">المقاس:</label>
+      <select data-role="size">
+        ${firstSizes.map(s=>`<option value="${s}">${s}</option>`).join('')}
+      </select>
+    </div>` : '';
+
+  // ─── الألوان ───
   const firstColors = firstVariant.colors || [];
+  const colorHtml = (!isCase) ? `
+    <div data-role="color-wrap" style="${firstColors.length ? '' : 'display:none'}">
+      <label class="field-label">اللون:</label>
+      <div class="color-swatches" data-role="colors">
+        ${firstColors.map((c,i)=>`
+          <span class="color-swatch ${i===0?'active':''}"
+                data-cidx="${i}" data-color="${c.name}" data-label="${c.name}"
+                style="background:${c.hex}"></span>`).join('')}
+      </div>
+      <div class="color-name-label" data-role="color-name">${firstColors[0]?.name || ''}</div>
+    </div>` : '';
 
   return `
-    <div class="product-card" data-id="${p.id}">
+    <div class="product-card" data-id="${p.id}" data-cat="${catSlug}">
       <div class="product-image ${initialImg ? '' : 'placeholder'}"
            style="cursor:zoom-in" onclick="openProductModal('${p.id}')">
         ${initialImg
@@ -2064,24 +2084,8 @@ function renderCard(p){
         ${p.material ? `<span class="material-badge">${p.material}</span>` : ''}
 
         ${variantSelectorHtml}
-
-        <div data-role="color-wrap" style="${firstColors.length?'':'display:none'}">
-          <label class="field-label">اللون:</label>
-          <div class="color-swatches" data-role="colors">
-            ${firstColors.map((c,i)=>`
-              <span class="color-swatch ${i===0?'active':''}"
-                    data-cidx="${i}" data-color="${c.name}" data-label="${c.name}"
-                    style="background:${c.hex}"></span>`).join('')}
-          </div>
-          <div class="color-name-label" data-role="color-name">${firstColors[0]?.name || ''}</div>
-        </div>
-
-        <div data-role="size-wrap" style="${(firstVariant.sizes||[]).length?'':'display:none'}">
-          <label class="field-label">المقاس:</label>
-          <select data-role="size">
-            ${(firstVariant.sizes||[]).map(s=>`<option value="${s}">${s}</option>`).join('')}
-          </select>
-        </div>
+        ${sizeSelectorHtml}
+        ${colorHtml}
 
         <div class="price-tag">
           <span class="num" data-role="price">${firstVariant.price||0}</span>
@@ -2102,6 +2106,7 @@ function attachCardHandlers(card){
   if (!product) return;
   const variants = normalizeProductVariants(product.variants || []);
   const variantLabel = getVariantLabel(product);
+  const catSlug = card.dataset.cat || product.category || '';
 
   const variantSelect = card.querySelector('[data-role="variant"]');
   const sizeSelect    = card.querySelector('[data-role="size"]');
@@ -3010,7 +3015,7 @@ function applyColorTint(card, hexColor){
 // ─── Post-attach extras: phone model selector + frame size selector + canvas tinting ───
 function attachExtras(card){
   const section = card.closest('section.category');
-  const catSlug = section ? section.id : '';
+  const catSlug = (section ? section.id : '') || card.dataset.cat || '';
   const isCase  = isPhoneCaseCategory(catSlug);
   const isFrame = isFrameCategory(catSlug);
 
@@ -3022,7 +3027,7 @@ function attachExtras(card){
 
   // Phone model dropdown + hide colors for case/cover sections
   if (isCase){
-    const fixedBrand = section.dataset.brandFilter || '';
+    const fixedBrand = section ? (section.dataset.brandFilter || '') : '';
     buildPhoneModelSelector(card, fixedBrand);
     const colorWrap = card.querySelector('[data-role="color-wrap"]');
     if (colorWrap) colorWrap.style.display = 'none';
