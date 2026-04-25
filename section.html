@@ -118,11 +118,12 @@
     box-shadow:0 2px 12px rgba(0,0,0,.05);
   }
   .product-card:hover{transform:translateY(-4px);border-color:var(--gold-3);box-shadow:var(--shadow-gold)}
-  .product-image{height:240px;background:var(--bg-3);overflow:hidden;position:relative;cursor:zoom-in}
-  .product-image img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
-  @media(max-width:900px){.product-image{height:230px}}
-  @media(max-width:600px){.product-image{height:200px}}
-  @media(max-width:380px){.product-image{height:170px}}
+  .product-image{height:340px;background:var(--bg-3);overflow:hidden;position:relative;cursor:zoom-in}
+  .product-image::before{content:"";position:absolute;inset:-10%;background-image:var(--card-bg-img);background-size:cover;background-position:center;filter:blur(28px) saturate(1.3);opacity:.55;z-index:0}
+  .product-image img{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 6px 16px rgba(0,0,0,.45));transition:transform .6s ease}
+  @media(max-width:900px){.product-image{height:300px}}
+  @media(max-width:600px){.product-image{height:260px}}
+  @media(max-width:380px){.product-image{height:220px}}
   .product-card:hover .product-image img{transform:scale(1.08)}
   .product-image.placeholder{display:grid;place-items:center;color:var(--gold-3);opacity:.4}
   .product-body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1}
@@ -308,8 +309,9 @@
   #productModal.open{opacity:1;pointer-events:all}
   #productModal.open .pm-inner{transform:scale(1);opacity:1}
   .pm-inner{background:#fff;border:1px solid var(--line);border-radius:var(--radius);width:100%;max-width:820px;max-height:90vh;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;position:relative;transform:scale(.93);opacity:0;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .25s;box-shadow:0 20px 60px rgba(0,0,0,.15)}
-  .pm-img-side{height:320px;background:#eee;overflow:hidden;position:relative;border-radius:var(--radius) 0 0 var(--radius)}
-  .pm-img-side img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .3s}
+  .pm-img-side{height:420px;background:#eee;overflow:hidden;position:relative;border-radius:var(--radius) 0 0 var(--radius)}
+  .pm-img-side::before{content:"";position:absolute;inset:-10%;background-image:var(--card-bg-img);background-size:cover;background-position:center;filter:blur(28px) saturate(1.3);opacity:.55;z-index:0}
+  .pm-img-side img{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 8px 20px rgba(0,0,0,.5));transition:opacity .3s}
   .pm-img-side img.img-fade{opacity:0}
   .pm-body{padding:28px 24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
   .pm-close{position:absolute;top:14px;left:14px;background:#f4f4f4;border:1px solid var(--line);color:#666;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer;font-size:1.1rem;z-index:2;transition:all .2s}
@@ -319,9 +321,9 @@
   .pm-material{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.85rem}
   .pm-material-label{color:#888;font-weight:600}
   .pm-material-value{color:#8a6912;font-weight:700;background:rgba(212,175,55,.08);padding:3px 10px;border-radius:6px;border:1px solid var(--gold-3)}
-  @media(max-width:900px){.pm-img-side{height:300px}}
-  @media(max-width:600px){.pm-inner{grid-template-columns:1fr}.pm-img-side{height:280px;border-radius:var(--radius) var(--radius) 0 0}.pm-body{padding:18px 14px}}
-  @media(max-width:380px){.pm-img-side{height:230px}}
+  @media(max-width:900px){.pm-img-side{height:380px}}
+  @media(max-width:600px){.pm-inner{grid-template-columns:1fr}.pm-img-side{height:320px;border-radius:var(--radius) var(--radius) 0 0}.pm-body{padding:18px 14px}}
+  @media(max-width:380px){.pm-img-side{height:280px}}
 
   /* ── Responsive ── */
   @media(max-width:768px){
@@ -949,6 +951,44 @@ async function init(){
 
 updateCartBadge();
 init();
+
+/* ═════════ BLURRED BACKDROP — ملء الفراغ حول الصورة بنفس الصورة Blur ═════════ */
+(function initImageBackdrops(){
+  const SELECTORS = '.product-image, .pm-img-side';
+  const updateFromImg = (img) => {
+    if(!img || !img.src) return;
+    const wrap = img.closest(SELECTORS);
+    if(wrap) wrap.style.setProperty('--card-bg-img', `url("${img.src}")`);
+  };
+  const initialPass = () => document.querySelectorAll(`${SELECTORS} img`).forEach(updateFromImg);
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initialPass);
+  } else {
+    initialPass();
+  }
+  const obs = new MutationObserver(muts => {
+    muts.forEach(m => {
+      if(m.type === 'attributes' && m.target.tagName === 'IMG'){
+        updateFromImg(m.target);
+      } else if(m.type === 'childList'){
+        m.addedNodes.forEach(n => {
+          if(n.nodeType !== 1) return;
+          if(n.matches && n.matches(SELECTORS)){
+            const img = n.querySelector('img');
+            if(img) updateFromImg(img);
+          }
+          if(n.querySelectorAll){
+            n.querySelectorAll(`${SELECTORS} img`).forEach(updateFromImg);
+          }
+        });
+      }
+    });
+  });
+  obs.observe(document.body, {
+    childList:true, subtree:true,
+    attributes:true, attributeFilter:['src']
+  });
+})();
 </script>
 </body>
 </html>
