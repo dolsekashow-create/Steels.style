@@ -905,6 +905,28 @@
 
 </div>
 
+<!-- ═════════ MATERIAL TYPES DATALIST (Shared) ═════════ -->
+<datalist id="materialTypesList">
+  <option value="بلوزة أوفر سايز">
+  <option value="بلوزة عادية">
+  <option value="بلوزة أوفر سايز لايكرا">
+  <option value="بلوزة قطن عادي">
+  <option value="بلوزة أطفال">
+  <option value="أطفال">
+  <option value="كبار">
+  <option value="بنطلون">
+  <option value="بنطلون صيفي">
+  <option value="بنطلون شتوي">
+  <option value="كاب صيفي">
+  <option value="طقية شتوي">
+  <option value="أكواب">
+  <option value="مطريات">
+  <option value="جواكيت">
+  <option value="بوسترات">
+  <option value="شورت">
+  <option value="طقم رياضي">
+</datalist>
+
 <!-- ═════════ PRODUCT MODAL ═════════ -->
 <div class="modal-overlay" id="productModal">
   <div class="modal">
@@ -1652,13 +1674,13 @@ function addVariant(data = {}){
             ).join('');
             return `<select data-f="type" onchange="syncFramePrice(this)"><option value="">— اختر الحجم —</option>${opts}</select>`;
           } else {
-            return `<input type="text" data-f="type" value="${(data.type||'').replace(/"/g,'&quot;')}" placeholder="مثال: عادية">`;
+            return `<input type="text" data-f="type" list="materialTypesList" value="${(data.type||'').replace(/"/g,'&quot;')}" placeholder="اختر أو اكتب نوع الخامة">`;
           }
         })()}
       </div>
       <div class="form-group">
         <label>السعر (شيقل) *</label>
-        <input type="number" data-f="price" value="${data.price||0}" min="0" step="1">
+        <input type="number" data-f="price" value="${data.price||''}" min="0" step="1" placeholder="مثال: 70" oninput="stripLeadingZero(this)">
       </div>
     </div>
     <div class="form-group">
@@ -1687,14 +1709,14 @@ function addVariant(data = {}){
     <div class="form-group">
       <label>المقاسات — اختر كل المقاسات المتاحة</label>
       <div class="sizes-picker" data-f="sizes">
-        ${['S','M','L','XL','XXL','3XL','4XL','فري سايز'].map(s => {
+        ${['XS','S','M','L','XL','XXL','3XL','4XL','2','4','6','8','10','12','14','16','فري سايز'].map(s => {
           const checked = (data.sizes||[]).includes(s) ? 'checked' : '';
           return `<label class="size-chip-label">
             <input type="checkbox" value="${s}" ${checked} onchange="syncSizeChips(this)">
             <span class="size-chip">${s}</span>
           </label>`;
         }).join('')}
-        ${(data.sizes||[]).filter(s=>!['S','M','L','XL','XXL','3XL','4XL','فري سايز'].includes(s)).map(s=>`
+        ${(data.sizes||[]).filter(s=>!['XS','S','M','L','XL','XXL','3XL','4XL','2','4','6','8','10','12','14','16','فري سايز'].includes(s)).map(s=>`
           <label class="size-chip-label custom-size-chip">
             <input type="checkbox" value="${s}" checked onchange="syncSizeChips(this)">
             <span class="size-chip">${s}</span>
@@ -1760,6 +1782,15 @@ function addCustomSize(btn){
 
 function removeCustomSize(btn){
   btn.closest('.size-chip-label').remove();
+}
+
+// ─── حذف الصفر اللي قدام السعر تلقائياً ───
+function stripLeadingZero(inp){
+  let v = inp.value;
+  // لو فيه صفر/أصفار في الأول وبعدها رقم تاني — احذفهم
+  if (/^0\d/.test(v)){
+    inp.value = v.replace(/^0+/, '');
+  }
 }
 
 // ─── مزامنة السعر تلقائياً لما تختار حجم برواز ───
@@ -2593,13 +2624,8 @@ async function saveSettings(){
   await loadSettings();
 }
 
-// ─── Close modals on backdrop click ───
-document.getElementById('productModal').addEventListener('click', (e)=>{
-  if (e.target.id === 'productModal') closeProductForm();
-});
-document.getElementById('orderModal').addEventListener('click', (e)=>{
-  if (e.target.id === 'orderModal') closeOrderModal();
-});
+// ─── المودالات بتقفل بس من زرار الـ ✕ أو "إلغاء" — مش من الضغط بره ───
+// (ده بيمنع إن الكاتالوج اللي بتملاه يقفل بالغلط ويرجعك من الأول)
 
 // ─── Categories CRUD ───
 function renderCategories(){
