@@ -265,6 +265,54 @@
     .size-chip{padding:9px 15px;font-size:.9rem}
   }
 
+  /* ─── Combobox للنوع/الخامة (input + سهم + قائمة منسدلة) ─── */
+  .combo-wrap{position:relative;width:100%}
+  .combo-wrap .combo-input{
+    width:100%;padding:10px 38px 10px 12px;
+    border-radius:8px;border:1.5px solid var(--line);
+    background:var(--bg-2);color:var(--text);
+    font-family:'Cairo';font-size:.92rem;outline:none;
+    transition:border-color .2s;
+  }
+  .combo-wrap .combo-input:focus{border-color:var(--gold-2)}
+  .combo-arrow{
+    position:absolute;top:50%;left:6px;transform:translateY(-50%);
+    width:30px;height:30px;display:grid;place-items:center;
+    background:transparent;border:none;color:var(--gold-2);
+    cursor:pointer;border-radius:6px;transition:all .2s;
+    padding:0;
+  }
+  .combo-arrow:hover{background:rgba(212,175,55,.12)}
+  .combo-arrow svg{width:14px;height:14px;transition:transform .25s}
+  .combo-wrap.open .combo-arrow svg{transform:rotate(180deg)}
+  .combo-list{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;
+    background:var(--bg-2);border:1.5px solid var(--gold-3);
+    border-radius:8px;max-height:240px;overflow-y:auto;
+    z-index:10;box-shadow:0 8px 24px rgba(0,0,0,.4);
+    display:none;
+  }
+  .combo-wrap.open .combo-list{display:block}
+  .combo-item{
+    padding:11px 14px;cursor:pointer;font-size:.9rem;
+    color:var(--text);border-bottom:1px solid rgba(255,255,255,.04);
+    transition:background .15s;
+  }
+  .combo-item:last-child{border-bottom:none}
+  .combo-item:hover,.combo-item.active{
+    background:rgba(212,175,55,.15);color:var(--gold-1);
+  }
+  .combo-item.empty{color:var(--text-dim);cursor:default;font-style:italic}
+  .combo-item.empty:hover{background:transparent;color:var(--text-dim)}
+  /* Mobile: targets أكبر للمس */
+  @media(max-width:768px){
+    .combo-wrap .combo-input{padding:12px 42px 12px 14px;font-size:.95rem}
+    .combo-arrow{width:36px;height:36px;left:4px}
+    .combo-arrow svg{width:16px;height:16px}
+    .combo-item{padding:14px;font-size:.95rem}
+    .combo-list{max-height:260px}
+  }
+
   /* ─── Color Picker (Photoshop-style) ─── */
   .color-picker-wrap{position:relative}
 
@@ -904,28 +952,6 @@
   </div>
 
 </div>
-
-<!-- ═════════ MATERIAL TYPES DATALIST (Shared) ═════════ -->
-<datalist id="materialTypesList">
-  <option value="بلوزة أوفر سايز">
-  <option value="بلوزة عادية">
-  <option value="بلوزة أوفر سايز لايكرا">
-  <option value="بلوزة قطن عادي">
-  <option value="بلوزة أطفال">
-  <option value="أطفال">
-  <option value="كبار">
-  <option value="بنطلون">
-  <option value="بنطلون صيفي">
-  <option value="بنطلون شتوي">
-  <option value="كاب صيفي">
-  <option value="طقية شتوي">
-  <option value="أكواب">
-  <option value="مطريات">
-  <option value="جواكيت">
-  <option value="بوسترات">
-  <option value="شورت">
-  <option value="طقم رياضي">
-</datalist>
 
 <!-- ═════════ PRODUCT MODAL ═════════ -->
 <div class="modal-overlay" id="productModal">
@@ -1674,7 +1700,15 @@ function addVariant(data = {}){
             ).join('');
             return `<select data-f="type" onchange="syncFramePrice(this)"><option value="">— اختر الحجم —</option>${opts}</select>`;
           } else {
-            return `<input type="text" data-f="type" list="materialTypesList" value="${(data.type||'').replace(/"/g,'&quot;')}" placeholder="اختر أو اكتب نوع الخامة">`;
+            const safeType = (data.type||'').replace(/"/g,'&quot;');
+            return `
+              <div class="combo-wrap">
+                <input type="text" data-f="type" class="combo-input" value="${safeType}" placeholder="اختر أو اكتب نوع الخامة" oninput="filterComboList(this)" onfocus="openComboFromInput(this)">
+                <button type="button" class="combo-arrow" onclick="toggleCombo(this)" tabindex="-1">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+                </button>
+                <div class="combo-list">${MATERIAL_TYPES.map(t => `<div class="combo-item" onclick="selectComboItem(this,'${t.replace(/'/g,"\\'")}')">${t}</div>`).join('')}</div>
+              </div>`;
           }
         })()}
       </div>
@@ -1792,6 +1826,98 @@ function stripLeadingZero(inp){
     inp.value = v.replace(/^0+/, '');
   }
 }
+
+// ─── أنواع الخامات (مصدر بيانات الـ Combobox) ───
+const MATERIAL_TYPES = [
+  'بلوزة أوفر سايز','بلوزة عادية','بلوزة أوفر سايز لايكرا','بلوزة قطن عادي',
+  'بلوزة أطفال','أطفال','كبار','بنطلون','بنطلون صيفي','بنطلون شتوي',
+  'كاب صيفي','طقية شتوي','أكواب','مطريات','جواكيت','بوسترات',
+  'شورت','طقم رياضي'
+];
+
+// ─── Combobox: فتح/قفل/فلترة/اختيار ───
+function closeAllCombos(except){
+  document.querySelectorAll('.combo-wrap.open').forEach(w => {
+    if (w !== except) w.classList.remove('open');
+  });
+}
+
+function toggleCombo(btn){
+  const wrap = btn.closest('.combo-wrap');
+  if (!wrap) return;
+  const wasOpen = wrap.classList.contains('open');
+  closeAllCombos(wasOpen ? null : wrap);
+  wrap.classList.toggle('open', !wasOpen);
+  if (!wasOpen){
+    // افتح القائمة بكل العناصر (من غير فلترة)
+    resetComboList(wrap);
+    // ركّز على الـ input عشان الكتابة تشتغل على طول
+    const inp = wrap.querySelector('.combo-input');
+    if (inp) setTimeout(() => inp.focus(), 50);
+  }
+}
+
+function openComboFromInput(inp){
+  const wrap = inp.closest('.combo-wrap');
+  if (!wrap) return;
+  closeAllCombos(wrap);
+  wrap.classList.add('open');
+  filterComboList(inp);
+}
+
+function filterComboList(inp){
+  const wrap = inp.closest('.combo-wrap');
+  if (!wrap) return;
+  const list = wrap.querySelector('.combo-list');
+  const q = (inp.value || '').trim().toLowerCase();
+  let visible = 0;
+  list.querySelectorAll('.combo-item').forEach(it => {
+    if (it.classList.contains('empty')) return;
+    const match = !q || it.textContent.toLowerCase().includes(q);
+    it.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  // رسالة لو مفيش نتايج
+  let empty = list.querySelector('.combo-item.empty');
+  if (visible === 0){
+    if (!empty){
+      empty = document.createElement('div');
+      empty.className = 'combo-item empty';
+      empty.textContent = 'مفيش نتائج — هيتحفظ كنوع جديد';
+      list.appendChild(empty);
+    }
+    empty.style.display = '';
+  } else if (empty){
+    empty.style.display = 'none';
+  }
+  // فضل القائمة مفتوحة
+  if (!wrap.classList.contains('open')) wrap.classList.add('open');
+}
+
+function resetComboList(wrap){
+  const list = wrap.querySelector('.combo-list');
+  if (!list) return;
+  list.querySelectorAll('.combo-item').forEach(it => it.style.display = '');
+  const empty = list.querySelector('.combo-item.empty');
+  if (empty) empty.style.display = 'none';
+}
+
+function selectComboItem(item, value){
+  const wrap = item.closest('.combo-wrap');
+  if (!wrap) return;
+  const inp = wrap.querySelector('.combo-input');
+  if (inp){
+    inp.value = value;
+    // لو في handler متربط بـ input event، شغّله
+    inp.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+  wrap.classList.remove('open');
+}
+
+// قفل أي combobox مفتوح لو ضغطت بره
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.combo-wrap')) closeAllCombos();
+});
 
 // ─── مزامنة السعر تلقائياً لما تختار حجم برواز ───
 function syncFramePrice(sel){
