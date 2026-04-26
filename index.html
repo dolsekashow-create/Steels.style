@@ -1869,13 +1869,18 @@ document.addEventListener('click', (e)=>{
 });
 
 // ─── Render all categories ───
-const VISIBLE_PER_SECTION = 6;
+// عدد الكاردات المعروضة في كل قسم — 8 على اللابتوب، 6 على الموبايل/التابلت.
+// الـ breakpoint 769px لأن الموبايل/التابلت بياخدوا max-width:768px في الـ CSS.
+const VISIBLE_PER_SECTION = 6; // fallback ثابت للـ mobile/tablet
+function getVisibleCount(){
+  return (window.innerWidth >= 769) ? 8 : 6;
+}
 const COVER_BRANDS = ['iPhone','Samsung','Xiaomi','Oppo'];
 
 function buildSection(id, title, subtitle, items, brandFilter){
-  // بنعرض أول 6 منتجات بس على الصفحة الرئيسية.
+  // بنعرض أول 6/8 منتجات بس على الصفحة الرئيسية حسب حجم الشاشة.
   // زر "عرض المزيد" يظهر تحت العنوان الفرعي على اليمين.
-  const visibleItems = items.slice(0, VISIBLE_PER_SECTION);
+  const visibleItems = items.slice(0, getVisibleCount());
   const grid = !items.length
     ? '<p style="grid-column:1/-1;text-align:center;color:var(--text-dim);padding:30px">لا توجد منتجات في هذا القسم حالياً</p>'
     : visibleItems.map(p => renderCard(p, id)).join('');
@@ -1925,6 +1930,20 @@ function renderAll(){
     attachExtras(card);
   });
 }
+
+// ─── إعادة بناء الـ sections لو حجم الشاشة عدّى الـ breakpoint بين 6 و 8 كاردات ───
+let _lastVisibleCount = getVisibleCount();
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    const current = getVisibleCount();
+    if (current !== _lastVisibleCount && products.length){
+      _lastVisibleCount = current;
+      renderAll();
+    }
+  }, 200);
+});
 
 // ─── Scroll to top ───
 function scrollToTop(){
@@ -2827,8 +2846,9 @@ const BRAND_META = {
 function buildCoverSection(cat){
   // كل البراندات المتاحة
   const allBrands = Object.keys(PHONE_MODELS);
-  // ناخد بس أول 6 للعرض في الصفحة الرئيسية
-  const visibleBrands = allBrands.slice(0, VISIBLE_PER_SECTION);
+  // ناخد بس أول 6/8 للعرض في الصفحة الرئيسية حسب حجم الشاشة
+  const limit = getVisibleCount();
+  const visibleBrands = allBrands.slice(0, limit);
 
   const cards = visibleBrands.map(brand => {
     const meta      = BRAND_META[brand] || { icon:'📱', label: brand };
@@ -2873,8 +2893,8 @@ function buildCoverSection(cat){
       </div>`;
   }).join('');
 
-  // زر "عرض المزيد" يظهر بس لو في براندات زيادة عن الـ 6
-  const showMorePill = allBrands.length > VISIBLE_PER_SECTION
+  // زر "عرض المزيد" يظهر بس لو في براندات زيادة عن الحد المعروض
+  const showMorePill = allBrands.length > limit
     ? `<a class="show-more-pill" href="section.html?cat=${encodeURIComponent(cat.slug)}">عرض المزيد ←</a>`
     : '';
 
