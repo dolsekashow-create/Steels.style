@@ -1550,13 +1550,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- ═════════ SCRIPTS ═════════ -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ─── Supabase ───
-const SUPABASE_URL = 'https://jitmkznqjcooznhttvat.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppdG1rem5xamNvb3puaHR0dmF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2OTM4NzQsImV4cCI6MjA5MjI2OTg3NH0.kraru_UKW4e54TqlWrMEltin9mrOKRbFEKd_CoRWjR8';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 // ─── State ───
 let settings = {};
 let products = [];
@@ -1613,11 +1607,17 @@ function toast(msg, type=''){
   t._timer = setTimeout(()=>t.classList.remove('show'), 2800);
 }
 
-// ─── Load settings from Supabase ───
-async function loadSettings(){
-  const { data, error } = await sb.from('site_settings').select('*');
-  if (error) { console.error(error); return; }
-  data.forEach(row => settings[row.key] = row.value);
+// ─── الإعدادات — عدّل القيم هنا يدويًا بدل سوبا بيز ───
+// مثال: SITE_SETTINGS.hero = { tagline:'...', subtitle:'...', logo_url:'logo.png' };
+const SITE_SETTINGS = {
+  hero: {},
+  contact: {},
+  about: {},
+  covers: {}
+};
+
+function loadSettings(){
+  settings = { ...SITE_SETTINGS };
 
   // Apply settings
   const hero = settings.hero || {};
@@ -1646,21 +1646,28 @@ async function loadSettings(){
   renderSearchCharChips();
 }
 
-// ─── Load products ───
-async function loadProducts(){
-  const { data, error } = await sb.from('products')
-    .select('*').eq('active', true).order('display_order').order('created_at');
-  if (error) { console.error(error); toast('فشل تحميل المنتجات', 'error'); return; }
-  products = data || [];
+// ─── المنتجات — ضيف منتجاتك هنا يدويًا بدل سوبا بيز ───
+// كل منتج لازم يكون فيه على الأقل: id, name, price, category, image_url
+// مثال:
+// { id:'p1', name:'اسم المنتج', price:100, category:'category-slug',
+//   image_url:'https://...', active:true, display_order:1 }
+const SITE_PRODUCTS = [
+  // ← ضيف منتجاتك هنا
+];
+
+function loadProducts(){
+  products = SITE_PRODUCTS.filter(p => p.active !== false);
   renderAll();
 }
 
-// ─── Load categories from Supabase ───
-async function loadCategories(){
-  const { data, error } = await sb.from('categories')
-    .select('*').eq('active', true).order('display_order');
-  if (error) { console.error(error); return; }
-  categories = data || [];
+// ─── الأقسام — ضيف أقسامك هنا يدويًا بدل سوبا بيز ───
+// مثال: { slug:'phone-cases', name:'كفرات الموبايل', active:true, display_order:1 }
+const SITE_CATEGORIES = [
+  // ← ضيف أقسامك هنا
+];
+
+function loadCategories(){
+  categories = SITE_CATEGORIES.filter(c => c.active !== false);
   renderNavAndFooter();
   renderSearchCatChips();   // ← أضف الأقسام للفلتر تلقائياً
 }
@@ -2667,25 +2674,8 @@ async function submitOrder(e){
   // Save cart before we mutate it (so we can still show items after)
   const cartSnapshot = [...cart];
 
-  // 1) Save order to Supabase
-  const { data: orderData, error } = await sb.from('orders').insert([{
-    customer_name: name,
-    customer_phone: phone,
-    city, street, notes,
-    items: cartSnapshot,
-    total: total,
-    status: 'pending',
-    delivery_area: deliveryArea,
-    delivery_fee: deliveryFee
-  }]).select().single();
-
-  if (error) {
-    console.error(error);
-    toast('حدث خطأ — تأكد من الاتصال', 'error');
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'تأكيد الطلب وإرسال عبر واتساب';
-    return;
-  }
+  // 1) Generate a local order id (no backend needed)
+  const orderId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
 
   // 2) Build WhatsApp message
   let msg = `🛍️ *طلب جديد من Steels Style*\n`;
@@ -2711,7 +2701,7 @@ async function submitOrder(e){
   msg += `💵 المجموع الفرعي: ${subtotal} شيقل\n`;
   msg += `🚚 التوصيل (${deliveryArea}): ${deliveryFee} شيقل\n`;
   msg += `💰 *الإجمالي: ${total} شيقل*\n`;
-  msg += `🔖 رقم الطلب: ${orderData.id.slice(0, 8)}`;
+  msg += `🔖 رقم الطلب: ${orderId.slice(0, 8)}`;
 
   // 3) Build WhatsApp URL
   const waNumber = (settings.contact && settings.contact.whatsapp) 
@@ -2729,7 +2719,7 @@ async function submitOrder(e){
     <div class="success-screen">
       <div class="success-icon">✅</div>
       <h3 style="color:var(--gold-1);margin-bottom:10px;font-size:1.4rem">تم حفظ طلبك بنجاح!</h3>
-      <p style="color:var(--text-dim);margin-bottom:8px">رقم الطلب: <strong style="color:var(--gold-1);font-family:var(--font-en);letter-spacing:1px">${orderData.id.slice(0,8).toUpperCase()}</strong></p>
+      <p style="color:var(--text-dim);margin-bottom:8px">رقم الطلب: <strong style="color:var(--gold-1);font-family:var(--font-en);letter-spacing:1px">${orderId.slice(0,8)}</strong></p>
       <p style="color:var(--text);margin-bottom:25px;line-height:1.7">
         دوس على الزرار الأخضر تحت عشان يفتح واتساب ويوصّل طلبك لنا.
         <br><small style="color:var(--text-dim)">(ده مهم عشان نأكد طلبك)</small>
@@ -2853,7 +2843,7 @@ function buildCoverSection(cat){
   const cards = visibleBrands.map(brand => {
     const meta      = BRAND_META[brand] || { icon:'📱', label: brand };
     const brandKey  = brand.toLowerCase();
-    // الصورة: أولاً من cover_images في Supabase، وإلا من أول منتج في القسم
+    // الصورة: أولاً من SITE_COVER_IMAGES، وإلا من أول منتج في القسم
     const dbImg     = coverImagesMap[brandKey] || '';
     const fallback  = (products.find(p => p.category === cat.slug && p.image_url) || {}).image_url || '';
     const imgUrl    = dbImg || fallback;
@@ -3167,64 +3157,58 @@ function attachExtras(card){
   // تغيير الصورة عند الضغط على اللون يتم عن طريق attachColorSwatches تلقائياً
 }
 
-// ─── Load cover images from Supabase ───
-async function loadCoverImages(){
-  const { data, error } = await sb.from('cover_images').select('brand_key, image_url');
-  if (error){ console.warn('cover_images:', error.message); return; }
-  coverImagesMap = {};
-  (data||[]).forEach(r => { if(r.image_url) coverImagesMap[r.brand_key] = r.image_url; });
+// ─── صور الكفرات حسب البراند — ضيفها هنا يدويًا بدل سوبا بيز ───
+// مثال: { iphone:'https://...', samsung:'https://...' }
+const SITE_COVER_IMAGES = {
+  // ← ضيف صور البراندات هنا
+};
+
+function loadCoverImages(){
+  coverImagesMap = { ...SITE_COVER_IMAGES };
+}
+
+// ─── الشخصيات — ضيفها هنا يدويًا بدل سوبا بيز ───
+// مثال: { name:'اسم الشخصية', active:true, display_order:1 }
+const SITE_CHARACTERS = [
+  // ← ضيف الشخصيات هنا
+];
+
+function loadCharactersFromDB(){
+  characters = SITE_CHARACTERS.filter(c => c.active !== false);
+  // أعد رسم قائمة الشخصيات في السيرش
+  if (typeof renderSearchCharChips === 'function') renderSearchCharChips();
+}
+
+// ─── موديلات الموبايل — ضيفها هنا يدويًا بدل سوبا بيز (أو سيبها فاضية واعتمد على PHONE_MODELS الجاهزة تحت) ───
+// مثال: { brand:'iphone', model_name:'iPhone 15', active:true, display_order:1 }
+const SITE_PHONE_MODELS = [
+  // ← ضيف موديلات الموبايل هنا
+];
+
+function loadPhoneModelsFromDB(){
+  phoneModelsDB = SITE_PHONE_MODELS.filter(m => m.active !== false);
+}
+
+// ─── أحجام البراويز — ضيفها هنا يدويًا بدل سوبا بيز ───
+// مثال: { size_label:'20×30', active:true, display_order:1 }
+const SITE_FRAME_SIZES = [
+  // ← ضيف أحجام البراويز هنا
+];
+
+function loadFrameSizesFromDB(){
+  frameSizesDB = SITE_FRAME_SIZES.filter(f => f.active !== false);
 }
 
 // ─── Init ───
 document.getElementById('year').textContent = new Date().getFullYear();
 updateCartBadge();
-(async () => {
-  await loadSettings();
-  await loadCoverImages();
-  await loadCategories();
-  await loadCharactersFromDB();
-  await loadPhoneModelsFromDB();
-  await loadFrameSizesFromDB();
-  await loadProducts();
-})();
-
-// ─── تحميل الشخصيات من Supabase ───
-async function loadCharactersFromDB(){
-  const { data, error } = await sb.from('characters')
-    .select('*').eq('active', true).order('display_order').order('name');
-  if (error){
-    console.warn('characters table:', error.message);
-    characters = [];
-  } else {
-    characters = data || [];
-  }
-  // أعد رسم قائمة الشخصيات في السيرش
-  if (typeof renderSearchCharChips === 'function') renderSearchCharChips();
-}
-
-// ─── تحميل موديلات الموبايل من Supabase ───
-async function loadPhoneModelsFromDB(){
-  const { data, error } = await sb.from('phone_models')
-    .select('*').eq('active', true).order('brand').order('display_order');
-  if (error){
-    console.warn('phone_models table:', error.message);
-    phoneModelsDB = [];
-  } else {
-    phoneModelsDB = data || [];
-  }
-}
-
-// ─── تحميل أحجام البراويز من Supabase ───
-async function loadFrameSizesFromDB(){
-  const { data, error } = await sb.from('frame_sizes')
-    .select('*').eq('active', true).order('display_order').order('size_label');
-  if (error){
-    console.warn('frame_sizes table:', error.message);
-    frameSizesDB = [];
-  } else {
-    frameSizesDB = data || [];
-  }
-}
+loadSettings();
+loadCoverImages();
+loadCategories();
+loadCharactersFromDB();
+loadPhoneModelsFromDB();
+loadFrameSizesFromDB();
+loadProducts();
 </script>
 
 <!-- ═════════ DESCRIPTION MODAL ═════════ -->
